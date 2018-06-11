@@ -1,0 +1,277 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% En 'inclues.tex' se encuentran la importación de paquetes necesarios
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{includes}
+\input{listings_settings}
+
+
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% En 'titlepage.tex' se encuentra la página de título
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{titlepage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% INDICE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\clearpage
+\tableofcontents
+\clearpage 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ABSTRACT
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\begin{abstract}
+%Your abstract.
+%\end{abstract}
+
+\lstset{style=sql}
+
+
+\section{Alta Disponibilidad, Balanceo de Carga, y Réplica}
+\emph{Estudie las formas de implementar Alta Disponibilidad, Balanceo de carga y replicación en postgres (capitulo 26 de la ayuda), escriba un resumen y un cuadro explicativo de cada alternativa planteada en la documentación, detallando el software que se debe utilizar para implementarlo.} 
+
+~\\
+
+El motor de bases de datos \emph{PostgreSQL} detalla en su documentación distintas formas posibles de implementar los conceptos de \textbf{Alta disponibilidad}, \textbf{Balanceo de carga}, y \textbf{Replicación}. Antes de detallar brevemente cada uno, se definen los conceptos de
+\begin{itemize}
+    \item \textbf{Alta disponibilidad}: propiedad de las \emph{Bases de Datos Distribuidas} (\emph{BDD}) que permite tener acceso a una relación \emph{r} cuando uno de los sitios que contenga dicha relación falle \autocite{silberschatz}. También se puede definir como la probabilidad de que el sistema esté accesible durante un periodo de tiempo \autocite{elmasri}.
+    \item \textbf{Balanceo de carga}: propiedad que permite que varios servidores provean los mismos datos \autocite{high-availability}
+    \item \textbf{Replicación}: mantener copias idénticas de la relación almacenadas en distintos sitios que conforman la \emph{BDD} \autocite{silberschatz} 
+\end{itemize}
+
+Hace falta agregar que en la gran mayoría de las soluciones propuestas por el motor se habla de una arquitectura de \emph{BDD} de tipo \emph{maestro-esclavo}, donde existe un único servidor que es el que escribe en la base de datos (maestro ó primario), y otros que solamente llevan registro de los cambios (esclavos o \emph{en espera}); se subdividen los servidores esclavos en \dq{servidores tibios} (\emph{warm}) y \dq{servidores calientes} (\emph{hot}). A los primeros solamente se puede conectar cuando se cae el servidor principal, y toman su puesto, mientras que a los segundos siempre se puede conectar, para realizar consultas de solo lectura.
+
+Las distintas soluciones que presenta \emph{Postgres} en su documentación son las siguientes:
+\begin{enumerate}
+    \item Tolerancia a fallos por disco compartido (\emph{Shared Disk Failover}): se mantiene una única copia de la base de datos que es accedida por múltiples servidores. Si el servidor principal falla, el servidor esclavo puede realizar una recuperación como si se tratase de una caída del sistema.
+
+    \item Replicación del sistema de archivos (\emph{File System Replication}): todos los cambios realizados al sistema de archivos de la base de datos son duplicados en otro sistema de archivos ubicado en otra máquina. La copia debe garantizar la consistencia de los datos entre ambas versiones.
+
+    \item Envío de la bitácora de transacciones (\emph{Transaction Log Shipping}): los servidores esclavos se pueden mantener actualizados enviándoles registros de la bitácora de lectura adelantada. Si el servidor principal se cae, los esclavos pueden tomar su puesto rápidamente ya que tienen casi toda la información.
+
+    \item Replicación \emph{maestro-esclavo} basado en \emph{triggers} (\emph{Trigger-Based Master-Standby Replication}): las consultas de modificación son enviadas al servidor maestro, para que este asíncronamente envíe los cambios a los esclavos (que solamente pueden realizar consultas de lectura). Este tipo de replicación se puede implementar con el módulo \textbf{Slony-I}. 
+
+    \item \emph{Middleware} de replicación basado en sentencias (\emph{Statement-Based Replication Middleware}): se intercepta cada sentencia SQL y se la envía a cada uno de los servidores que componen la \emph{BDD} (cada uno opera independientemente). Las cosultas de escritura son enviadas a todos los servidores, así se mantienen actualizados, mientras que las de lecturas pueden ser enviadas a uno solo (se balancea el trabajo de lectura). Se puede implementar con \textbf{Pgpool-II} y con \textbf{Continuent Tungsten}  
+
+    \item Replicación asíncrona de múltiples maestros (\emph{Asynchronous Multimaster Replication}): cada servidor trabaja independientemente del resto, y periódicamente se comunican entre sí para identificar transacciones que entran en conflicto. Estos conflictos pueden ser resueltos por el usuario o establecer de antemano ciertas reglas de resolución. Puede ser implementado con el módulo \textbf{Bucardo} 
+
+    \item Replicación síncrona de múltiples maestros (\emph{Synchronous Multimaster Replication}): cualquier servidor puede aceptar consultas de escritura, y los cambios son transmitidos desde el servidor que realizó la actulización hacia el resto \emph{antes de que finalice la transacción}. Consultas de lectura pueden ser ejecutadas por cualquier servidor. El motor no provee este tipo de replicación, pero puede ser implementado mediante el \emph{protocolo de compromiso en dos fases}.
+\end{enumerate}
+
+\begin{center}
+    \begin{tabular}{| p{5cm} | c | p{5cm} | p{4cm} |}
+        \hline
+        \textbf{Solución} & ¿Asíncrono? & Cuello de botella & Software adicional \\ \hline
+        \textbf{Tolerancia a fallos por disco compartido} & \xmark & Fallos del disco & -\\ \hline
+        \textbf{Replicación del sistema de archivos} & \xmark & Integridad de la copia & -\\ \hline
+        \textbf{Envío de la bitácora de transacciones} & Ambas & Velocidad de la red &\\ \hline
+        \textbf{Replicación \emph{maestro-esclavo} basado en \emph{triggers}} & \cmark & Velocidad de la red & Slony-I\\ \hline
+        \textbf{\emph{Middleware} de replicación basado en sentencias} & \cmark & Sincronización entre servidores & Pgpool-II, Continuent Tungsten\\ \hline
+        \textbf{Replicación asíncrona de múltiples maestros} & \cmark & Sincronización entre servidores y resolución de conflictos & Bucardo\\ \hline
+        \textbf{Replicación síncrona de múltiples maestros} & \xmark & Sincronización entre servidores & -\\ \hline
+    \end{tabular}
+\end{center}
+
+\subsection{Replicación en \emph{PostgreSQL}: \emph{Slony-I}}
+\textbf{Slony-I} es un módulo para \emph{PostgreSQL} que implementa \emph{un sistema de replicación \dq{maestro con múltiples esclavos}} \autocite{slony}. Soporta \textbf{réplica en cascada} (un nodo sirve a otro nodo), y es tolerante a fallos. 
+
+Algunos conceptos que maneja el módulo son:
+\begin{itemize}
+    \item \textbf{Cluster}: conjunto de instancias de bases de datos involucradas en la replicación.
+    \item \textbf{Nodo}: integrantes del cluster.
+    \item \textbf{Conjunto de réplica}: conjunto de objetos de la base de datos a ser replicados; pueden haber varios en un cluster.
+    \item \textbf{Origen}: nodo principal (maestro); es el único en el que se puede escribir.
+    \item \textbf{Suscriptores}: nodos esclavos; reciben datos de la réplica.
+    \item \textbf{Proveedor}: nodo esclavo que provee de datos a los otros nodos esclavos (actúa como un nodo maestro pero no se permite ninguna escritura en él).
+\end{itemize}
+
+La versión 9.0 de \emph{PostgreSQL} incorpora \emph{replicación por flujos}, sin embargo hay ciertos casos de uso donde se necesitaría una herramiento como \emph{Slony-I} ya que las técnicas nativas del motor no alcanzan \autocite{infoslony}:
+\begin{enumerate}
+    \item Interactuar con distintas versiones de \emph{Postgres}: \emph{Slony-I} soporta esta interacción, mientras que la replicación propia del DBMS no.
+    \item Replicación parcial: la replicación basada en \emph{logs de escritura adelantada} replica todo. 
+    \item Implementar comportamiento adicional en los esclavos.
+\end{enumerate}
+
+
+\section{Fragmentos de la base \emph{aviones}}
+\emph{Sobre la base de datos de aviones, crear fragmentos para los pilotos de Trelew, pilotos de Madryn, y todos los pilotos. Hacer esquema de fragmentación y de asignación} 
+
+~\\
+
+La definición de cada fragmento se puede encontrar en los archivos \textbf{\emph{pilotos\_de\_madryn.sql}}, \textbf{\emph{pilotos\_de\_trelew.sql}}, y \textbf{\emph{todos\_pilotos.sql}} dentro del directorio \emph{fragmentos\_aviones}. Cada consulta incluye una descripción y nombre de fragmento.
+
+\begin{center}
+    \begin{table}[H]
+        \begin{tabular}{| p{5cm} | c | p{5cm} | p{4cm} |}
+            \hline
+            Sitio Trelew & Sitio Madryn & Sitio Todos\\ \hline
+            \textbf{\emph{localidad\_trelew}} & \textbf{\emph{localidad\_madryn}} & \textbf{\emph{localidad\_todos}}\\ \hline
+            \textbf{\emph{piloto\_trelew}} & \textbf{\emph{piloto\_madryn}} & \textbf{\emph{piloto\_todos}}\\ \hline
+            \textbf{\emph{trabajador\_trelew}} & \textbf{\emph{trabajador\_madryn}} & \textbf{\emph{trabajador\_todos}}\\ \hline
+            \textbf{\emph{piloto\_avion\_trelew}} & \textbf{\emph{piloto\_avion\_madryn}} & \textbf{\emph{piloto\_avion\_todos}}\\ \hline
+            \textbf{\emph{avion\_trelew}} & \textbf{\emph{avion\_madryn}} & \textbf{\emph{avion\_todos}}\\ \hline
+            \textbf{\emph{modelo\_avion\_trelew}} & \textbf{\emph{modelo\_avion\_madryn}} & \textbf{\emph{modelo\_avion\_todos}}\\ \hline
+        \end{tabular}
+    \caption{\label{tab:table-name}Esquema de asignación}
+    \end{table}
+\end{center}
+
+
+\section{Bases de Datos Distribuidas con \emph{dblink}}
+
+\subsection{Introducción}
+El módulo \emph{dblink} permite hacer conexiones a otras bases de de datos \emph{PostgreSQL} desde la sesión actual \autocite{dblink-intro}. Para utilizarlo hace falta crear la extensión en la base de datos en la que se lo vaya a usar
+
+\vspace*{5mm}
+\begin{lstlisting}
+universidad=# CREATE EXTENSION dblink;
+CREATE EXTENSION
+\end{lstlisting}
+
+A continuación se explicarán brevemente las primitivas de \emph{dblink} que se utilizarán posteriormente en este laboratorio
+\begin{itemize}
+    \item \emph{dblink\_connect}: establecer una conexión con otra base de datos; la conexión puede ser nombrada o no. Mínimamente se necesita pasar como parámetro el nombre de la base de datos a la que se intenta conectar, si es que está en el mismo servidor. Caso contrario, se le debe indicar la dirección IP del servidor, puerto de escucha, y credenciales (usuario y contraseña).
+    \item \emph{dblink\_disconnect}: cierra una conexión (nombrada) con otra base de datos. 
+    \item \emph{dblink}: ejecuta una consulta en una base de datos remota. Se le debe pasar como parámetros la conexión (ya sea el nombre, o toda la cadena de conexión), y la consulta que se quiera realizar. También se debe definir el formato de la tabla que devolverá la consulta 
+    \vspace*{5mm}
+    \begin{lstlisting}[title=Consulta remota al sitio de cursos]
+    universidad=# SELECT * FROM dblink('conn_cursos', 'SELECT nombre FROM cursos') AS t(nombre varchar(50));
+    \end{lstlisting}
+
+    \item \emph{dblink\_exec}: ejecuta una consulta remota pero no devuelve resultados. Al igual que la primitiva anterior, se le debe pasar la conexión y la consulta. 
+\end{itemize}
+
+\subsection{Implementación}
+\emph{Con el módulo dbLink de Postgres establecer una conexión entre dos servidores posibles; en el servidor local crear las tablas \dq{alumnos} e \dq{inscriptos}, en el remoto crear la tabla \dq{cursos}} 
+
+~\\
+
+Para la implementación de la base de datos distribuidas, se optó por crear dos \emph{servicios} mediante contenedores de \docker{}. Cada uno corre una servidor de \emph{PostgreSQL 9.6} con un usuario con privilegios de superusuario. La definición y el manejo de estos servicios se llevó a cabo utilizando \doccom{} \footnote{Para ver cómo están definidos, referirse al archivo \emph{docker-compose.yml} y al archivo \emph{README.md}}.
+
+El servicio nombrado \dq{sitio-alumnos} hará de servidor local, mientras que \dq{sitio-cursos} será el remoto.
+
+Cada servicio se crea con los siguientes parámetros:
+\begin{itemize}
+    \item Usuario: \emph{admin} 
+    \item Contraseña: \emph{admin} 
+    \item Nombre de la base de datos: \emph{universidad} 
+\end{itemize}
+
+\subsubsection{Creación de las tablas}
+
+Para crear las tablas en el servidor local y el remoto, se ejecutó el siguiente script en el sitio de alumnos
+
+\clearpage
+\begin{lstlisting}[title=Definición de las tablas (el script SQL es \emph{crear\_tablas\_locales\_remotas.sql})]
+CREATE TABLE alumnos (
+    dni integer PRIMARY KEY,
+    nombre varchar(50)
+);
+
+-- Conectar al servidor 172.20.0.20 (servidor remoto, sitio con los cursos) con las credenciales admin:admin
+SELECT dblink_connect('conn_cursos', 'hostaddr=172.20.0.20 dbname=universidad user=admin password=admin');
+
+-- Utilizar la conexión creada anteriormente para ejecutar una consulta remota
+SELECT dblink_exec('conn_cursos', 'CREATE TABLE cursos (id_curso integer PRIMARY KEY, nombre varchar(50), id_profesor integer, departamento integer)');
+
+CREATE TABLE inscriptos (
+    dni_alumno integer REFERENCES alumnos (dni),
+    id_curso integer,
+    anio integer,
+    nota integer,
+    PRIMARY KEY (dni_alumno, id_curso, anio)
+);
+
+-- Cerrar la conexión con la BD remota
+SELECT dblink_disconnect('conn_cursos');
+\end{lstlisting}
+
+\subsubsection{Carga de datos}
+
+Los scripts generados para la carga de datos fueron creados utilizando el sitio \autocite{data}. Debido la extensión de los scripts no se mostrarán en este informe, pero están disponibles en el directorio \emph{cargas/}, cada uno con un nombre representativo según su tabla.
+
+Para la tabla \emph{inscriptos}, se cargaron datos que pueden existir en la tabla \emph{cursos}, y otros que no (según se pedía en el enunciado).  
+
+\subsection{Consultas}
+
+Ya poblada las tablas que componen la base de datos distribuidas, se pueden ejecutar consultas con datos locales y datos remotos utilizando el módulo \emph{dblink}. 
+
+\subsubsection{Cursos con inscriptos}
+
+
+\vspace*{5mm}
+\begin{lstlisting}[title=Cursos con algún inscripto (el script es \emph{cursos\_con\_inscriptos.sql})]
+SELECT dblink_connect('conn_cursos', 'hostaddr=172.20.0.20 user=admin password=admin dbname=universidad');
+
+SELECT 
+    distinct nombre 
+FROM 
+    dblink('conn_cursos', 'SELECT id_curso, nombre FROM cursos') 
+    AS t(id_curso integer, nombre text)
+JOIN inscriptos AS ins 
+    ON t.id_curso=ins.id_curso;
+
+SELECT dblink_disconnect('conn_cursos');
+\end{lstlisting}
+
+En la consulta anterior, se muestran una única vez los nombres de los cursos (desde el servidor remoto) que tengan al menos un inscripto registrado (en e servidor local).
+
+
+\subsubsection{Alumnos recursantes}
+
+\vspace*{5mm}
+\begin{lstlisting}[title=Alumnos que cursaron más de una vez una materia (el script es \emph{recursantes.sql})]
+-- Alumnos recursantes
+
+SELECT dblink_connect('conn_cursos', 'hostaddr=172.20.0.20 user=admin password=admin dbname=universidad');
+
+SELECT 
+    al.nombre AS "Alumno",
+    ins.dni_alumno AS "DNI", 
+    cur.nombre AS "Curso",
+    COUNT(ins.id_curso) AS "Cuántas veces" 
+FROM inscriptos AS ins
+JOIN alumnos AS al
+    ON ins.dni_alumno = al.dni
+JOIN (SELECT * FROM dblink('conn_cursos', 'SELECT id_curso, nombre FROM cursos') AS t(id_curso integer, nombre text)) AS cur
+    ON ins.id_curso=cur.id_curso
+GROUP BY 
+    al.nombre,
+    ins.dni_alumno,
+    cur.nombre
+HAVING COUNT(ins.id_curso) > 1 
+ORDER BY al.nombre;
+
+SELECT dblink_disconnect('conn_cursos');
+\end{lstlisting}
+
+Los alumnos recursantes estarán registrados varias veces con un mismo curso en la tabla local \emph{inscriptos}. 
+
+\subsubsection{Verificar la existencia de los cursos en la tabla \emph{inscriptos}}
+
+Para recorrer la tabla de inscripciones y verificar si cada curso registrado existe en la tabla remota \emph{cursos}, se creó una función \emph{verificar\_curso\_inscripto()} que itera sobre la tabla (valiéndose de la posibilidad que provee \emph{Pl/PgSQL} para iterar sobre el resultado de una consulta en un ciclo \emph{FOR}) y consulta en la tabla remota si existe ese curso. Debido a la extensión de la función, no se presentará en este informe, pero se la puede encontrar en el archivo \textbf{\emph{verificar\_curso\_inscripto.sql}}
+
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% FIN DOCUMENTO, AHORA REFERENCIAS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\clearpage
+\printbibliography
+
+\end{document}
+
+\todo[inline, color=green!40]{This is an inline comment.}
+
+\vspace*{5mm}
+\lstset{style=sql}
+\begin{lstlisting}
+CREATE TABLE aeropuerto OF t_aeropuerto;
+\end{lstlisting}

@@ -1,0 +1,29 @@
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{ltgray}{rgb}{0.5,0.5,0.5}
+\definecolor{alizarin}{rgb}{0.82, 0.1, 0.26}
+
+\lstdefinestyle{sql}{
+	basicstyle=\fontsize{12}{10}\ttfamily,
+	belowcaptionskip=1\baselineskip,
+  	breaklines=true,
+  	title=\lstname,	% show the filename of files included with \lstinputlisting; also try caption instead of title
+  	frame=L, %Este pone la línea (doble) separadora a la izquiera, ir probando entre l, L,r y R
+  	xleftmargin=\parindent,
+  	language=SQL,
+  	morekeywords={*,modify,MODIFY,...},
+  	numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
+  	numberstyle=\color{mygray}, % the style that is used for the line-numbers
+  	rulecolor=\color{mygray},         % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments (green here))
+  	showstringspaces=false,
+  	captionpos=b,                    % sets the caption-position to bottom
+  	keywordstyle=\bfseries\color{green!40!black},
+  	commentstyle=\itshape\color{purple!40!black},
+  	identifierstyle=\color{blue},
+  	stringstyle=\color{alizarin},
+    inputencoding=utf8,
+    extendedchars=true,
+    literate={á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1,
+}
