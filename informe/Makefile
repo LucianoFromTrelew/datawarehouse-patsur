@@ -13,7 +13,7 @@ SOURCE=informe.tex references.bib
 clean:
 	rm -f *.bak *~ *.log *.blg *.bbl *.aux *.toc *.cut *.out *.tmp *.tpm *.adx *.adx.hyp *.idx *.ilg *.ind \
 	*.and *.glg *.glo *.gls *.wdx *.wnd *.wrd *.wdv *.ldx *.lnd *.rdx *.rnd *.xdv *.fdb *.fdb_latexmk *.fls \
-	*.synctex.gz *.run.xml
+	*.synctex.gz *.run.xml *.bcf
 
 realclean: clean
 	rm -f *.dvi *.ps *.pdf *.bcf
