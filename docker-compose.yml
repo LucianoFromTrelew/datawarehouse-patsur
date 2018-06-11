@@ -1,0 +1,57 @@
+version: '3'
+services:
+#############################################################
+  viejo:
+    image: "postgres:9.6"
+    container_name: "sistema-viejo"
+    hostname: sistema-viejo
+    volumes:
+      - "$HOME/.local/datawarehouse-volume/viejo:/volume"
+    environment:
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_USER=admin
+      - POSTGRES_DB=facturacion
+      - PGDATA=/volume/data
+    networks:
+      facturacion:
+        ipv4_address: 172.40.0.10
+#############################################################
+  actual:
+    image: "postgres:9.6"
+    container_name: "sistema-actual"
+    hostname: sistema-actual
+    volumes:
+      - "$HOME/.local/datawarehouse-volume/actual:/volume"
+    environment:
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_USER=admin
+      - POSTGRES_DB=facturacion
+      - PGDATA=/volume/data
+    networks:
+      facturacion:
+        ipv4_address: 172.40.0.20
+#############################################################
+  datawarehouse:
+    image: "postgres:9.6"
+    container_name: "datawarehouse"
+    hostname: datawarehouse
+    volumes:
+      - "$HOME/.local/datawarehouse-volume/datawarehouse:/volume"
+    environment:
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_USER=admin
+      - POSTGRES_DB=datawarehouse
+      - PGDATA=/volume/data
+    networks:
+      facturacion:
+        ipv4_address: 172.40.0.30
+
+#############################################################
+#############################################################
+networks:
+  facturacion:
+    driver: bridge
+    ipam:
+      driver: default
+      config: 
+        - subnet: 172.40.0.0/16 
