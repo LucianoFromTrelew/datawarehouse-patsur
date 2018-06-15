@@ -30,8 +30,6 @@ CREATE TABLE producto (
     FOREIGN KEY (cod_categoria, cod_subcategoria) REFERENCES categoria (cod_categoria, cod_subcategoria)
 );
 
-CREATE TABLE tiempo ();
-
 -- Que onda esta tabla, nada que ver los campos
 CREATE TABLE medio_pago (
     cod_medio_pago integer,
