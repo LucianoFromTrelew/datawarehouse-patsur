@@ -22,7 +22,7 @@ CREATE TABLE categoria (
 
 CREATE TABLE producto (
     cod_producto integer,
-    nombre varchar(50),
+    nombre varchar(100),
     cod_categoria integer,
     cod_subcategoria integer,
     precio_actual real,
