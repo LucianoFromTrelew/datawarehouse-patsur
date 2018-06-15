@@ -68,6 +68,11 @@ CREATE OR REPLACE FUNCTION insertar_ventas(cantidad_ventas integer) RETURNS VOID
     No devuelve nada
 */
 DECLARE
+    MIN_FECHA CONSTANT timestamp := '1990-01-01';
+    MAX_FECHA CONSTANT timestamp := '2010-01-01';
+    MIN_NRO_FACTURA CONSTANT integer := 1;
+    MAX_NRO_FACTURA CONSTANT integer := 1000000;
+
     i integer;
     fecha_venta date;
     nro_factura integer;
@@ -76,10 +81,13 @@ DECLARE
 BEGIN
     FOR i IN 1..cantidad_ventas LOOP
         SELECT INTO fecha_venta get_random_date(
-            timestamp '1990-01-01',
-            timestamp '2010-01-01'
+            MIN_FECHA,
+            MAX_FECHA
         );
-        SELECT INTO nro_factura get_random_range_int(1, 1000000);
+        SELECT INTO nro_factura get_random_range_int(
+            MIN_NRO_FACTURA, 
+            MAX_NRO_FACTURA
+        );
         SELECT * INTO cliente FROM get_random_cliente();
         SELECT INTO forma_pago get_random_forma_pago();
 
@@ -106,6 +114,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 SELECT insertar_ventas(
-    -- 10
-    get_random_range_int(100000, 1000000)
+    10
+    -- get_random_range_int(100000, 1000000)
 );

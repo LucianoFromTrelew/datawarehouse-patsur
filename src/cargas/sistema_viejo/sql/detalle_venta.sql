@@ -52,6 +52,9 @@ CREATE OR REPLACE FUNCTION insertar_detalle_venta(cantidad_detalles integer) RET
     No devuelve nada
 */
 DECLARE
+    MIN_UNIDAD CONSTANT integer := 1;
+    MAX_UNIDAD CONSTANT integer := 100;
+
     i integer;
     venta venta%ROWTYPE;
     producto producto%ROWTYPE;
@@ -60,7 +63,10 @@ BEGIN
     FOR i IN 1..cantidad_detalles LOOP
         SELECT * INTO venta FROM get_random_venta();
         SELECT * INTO producto FROM get_random_producto();
-        SELECT INTO unidad get_random_range_int(1, 100);
+        SELECT INTO unidad get_random_range_int(
+            MIN_UNIDAD,
+            MAX_UNIDAD
+        );
 
         RAISE NOTICE '[%/%] INSERTANDO DETALLE (%, %, %, %)',
             i,
@@ -84,6 +90,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 SELECT insertar_detalle_venta(
-    -- 10
-    get_random_range_int(100000, 1000000)
+    10
+    -- get_random_range_int(100000, 1000000)
 );
