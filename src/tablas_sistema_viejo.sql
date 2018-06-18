@@ -14,7 +14,7 @@ CREATE TABLE categoria (
 
 CREATE TABLE producto (
     nro_producto integer,
-    nombre varchar(50),
+    nombre varchar(100),
     nro_categ integer,
     precio_actual real,
     PRIMARY KEY (nro_producto),
