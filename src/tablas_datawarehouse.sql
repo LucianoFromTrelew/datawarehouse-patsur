@@ -70,19 +70,20 @@ CREATE TABLE venta(
     id_factura integer,
     id_cliente integer, 
     id_producto integer, 
-    id_sucurusal integer,
+    id_sucursal integer,
     id_medio_pago integer,
     monto_vendido real, 
-    cantidad_Vendida integer
+    cantidad_Vendida integer,
     PRIMARY KEY (
         fecha, 
         id_factura, 
         id_cliente, 
         id_producto, 
         id_sucursal, 
-        id_medio_pago),
+        id_medio_pago
+    ),
     FOREIGN KEY (id_cliente) REFERENCES cliente(id_cliente),
     FOREIGN KEY (id_producto) REFERENCES producto(id_producto),
     FOREIGN KEY (id_sucursal) REFERENCES distribucion_geografica(id_sucursal),
-    FOREIGN KEY (id_medio_pago) REFERENCES medio_pago(id_medio_pago),
+    FOREIGN KEY (id_medio_pago) REFERENCES medios(id_medio_pago)
 );
