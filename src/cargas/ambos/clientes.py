@@ -43,9 +43,6 @@ def main():
         f.write(clientes_viejos)
         f.close()
 
-    print(clientes_viejos)
-    print(clientes_nuevos)
-
 
 if __name__ == "__main__":
     main()
