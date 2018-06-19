@@ -95,3 +95,9 @@ CREATE TABLE te_cliente (
 	cliente_d_w serial
 );
 
+-- Tabla de Equivalencia para clientes
+CREATE TABLE te_producto (
+	producto_s_v integer,
+	producto_s_n integer,
+	producto_d_w serial
+);
