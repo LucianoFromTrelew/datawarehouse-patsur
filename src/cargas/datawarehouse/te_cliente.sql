@@ -1,10 +1,3 @@
--- Tabla de Equivalencia para clientes
-CREATE TABLE te_cliente (
-	cliente_s_v integer,
-	cliente_s_n integer,
-	cliente_d_w serial
-);
-
 create extension if not exists dblink
 -- Creacion de tabla de equivalencia
 
@@ -30,4 +23,5 @@ dblink('sistema_actual', 'select cod_cliente, nombre from cliente')
 as consulta_actual(cod_cliente integer,nombre varchar(50)) 
 left join
 dblink('sistema_viejo', 'select nro_cliente, nombre from cliente') 
-as consulta_viejo(nro_cliente integer,nombre varchar(50)) on consulta_viejo.nombre = consulta_actual.nombre
+as consulta_viejo(nro_cliente integer,nombre varchar(50)) 
+    on consulta_viejo.nombre = consulta_actual.nombre
