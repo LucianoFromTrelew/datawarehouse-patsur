@@ -24,7 +24,7 @@ def main():
                 REQ_URL.format(cat)).json()['results']
             ]
             for prod in productos:
-                insert_string = 'INSERT INTO producto VALUES ({}, \'{}\', {}, {});\n'.format(
+                insert_string = 'INSERT INTO producto VALUES ({}, \'{}\', {}, {}, {});\n'.format(
                     prod['id_prod'],
                     prod['nombre'],
                     cat,
