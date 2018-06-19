@@ -87,3 +87,11 @@ CREATE TABLE venta(
     FOREIGN KEY (id_sucursal) REFERENCES distribucion_geografica(id_sucursal),
     FOREIGN KEY (id_medio_pago) REFERENCES medios(id_medio_pago)
 );
+
+-- Tabla de Equivalencia para clientes
+CREATE TABLE te_cliente (
+	cliente_s_v integer,
+	cliente_s_n integer,
+	cliente_d_w serial
+);
+
