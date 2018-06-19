@@ -20,9 +20,9 @@ select dblink_connect(
 insert into te_producto (producto_s_n, producto_s_v)
 select consulta_actual.cod_producto ,consulta_viejo.nro_producto from
 dblink('sistema_actual', 'select cod_producto, nombre from producto')
-as consulta_actual(cod_producto integer,nombre varchar(50)) 
+as consulta_actual(cod_producto integer,nombre varchar(100)) 
 left join
 dblink('sistema_viejo', 'select nro_producto, nombre from producto') 
-as consulta_viejo(nro_producto integer,nombre varchar(50)) 
+as consulta_viejo(nro_producto integer,nombre varchar(100)) 
     on consulta_viejo.nombre = consulta_actual.nombre;
 
