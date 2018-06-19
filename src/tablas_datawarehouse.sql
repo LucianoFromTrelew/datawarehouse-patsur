@@ -1,3 +1,4 @@
+-- Cargas desde el sistema actual
 CREATE TABLE categoria (
     id_categoria integer,
     id_subcategoria integer,
@@ -14,18 +15,21 @@ CREATE TABLE producto (
     FOREIGN KEY (id_categoria,id_subcategoria) REFERENCES categoria (id_categoria, id_subcategoria)
 );
 
+-- Cargas desde el sistema actual
 CREATE TABLE medios (
     id_medio_pago integer,
     descripcion varchar(100),
     PRIMARY KEY (id_medio_pago)
 );
 
+-- Cargar datos nuevos
 CREATE TABLE region (
     id_region integer,
     descripcion varchar(100),
     PRIMARY KEY (id_region)
 );
 
+-- Cargar datos nuevos
 CREATE TABLE provincia(
     id_provincia integer,
     id_region integer, 
@@ -34,6 +38,7 @@ CREATE TABLE provincia(
     FOREIGN KEY (id_region) REFERENCES region(id_region)
 );
 
+-- Cargar datos nuevos
 CREATE TABLE ciudad (
     id_ciudad integer,
     id_provincia integer,
@@ -42,6 +47,7 @@ CREATE TABLE ciudad (
     FOREIGN KEY (id_provincia) REFERENCES provincia(id_provincia)
 );
 
+-- Cargar datos nuevos
 CREATE TABLE distribucion_geografica (
     id_sucursal integer,
     id_ciudad integer,
@@ -50,6 +56,7 @@ CREATE TABLE distribucion_geografica (
     FOREIGN KEY (id_ciudad) REFERENCES ciudad(id_ciudad)
 );
 
+-- Cargas desde el sistema actual
 CREATE TABLE tipo_cliente (
     id_tipo integer,
     descripcion varchar(100),
