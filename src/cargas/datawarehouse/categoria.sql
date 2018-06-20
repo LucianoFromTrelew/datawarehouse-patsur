@@ -1,5 +1,4 @@
 CREATE EXTENSION IF NOT EXISTS dblink;
--- Creacion de tabla de equivalencia
 
 -- Conexión con el sistema actual
 SELECT DBLINK_CONNECT(
