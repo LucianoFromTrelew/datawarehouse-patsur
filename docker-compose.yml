@@ -42,6 +42,8 @@ services:
       - POSTGRES_USER=admin
       - POSTGRES_DB=datawarehouse
       - PGDATA=/volume/data
+    ports:
+      - "6666:5432"
     networks:
       facturacion:
         ipv4_address: 172.40.0.30
