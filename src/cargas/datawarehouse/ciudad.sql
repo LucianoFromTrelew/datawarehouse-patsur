@@ -1,3 +1,6 @@
+-- Script sacado de:
+-- http://www.agevaled.com/wp-content/uploads/provincias%20y%20localidades.txt
+
 INSERT INTO ciudad VALUES
 (1, 1, '25 de Mayo'),
 (2, 1, '3 de febrero'),
