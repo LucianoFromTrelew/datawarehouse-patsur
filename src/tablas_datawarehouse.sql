@@ -73,6 +73,7 @@ CREATE TABLE cliente (
 
 CREATE TABLE venta(
     fecha date,
+    id_tiempo integer,
     id_factura integer,
     id_cliente integer, 
     id_producto integer, 
