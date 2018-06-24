@@ -67,7 +67,6 @@ CREATE TABLE cliente (
     id_cliente integer,
     id_tipo integer,
     nombre varchar(100),
-    apellido varchar(100),
     PRIMARY KEY (id_cliente),
     FOREIGN KEY (id_tipo) REFERENCES tipo_cliente(id_tipo)
 );
