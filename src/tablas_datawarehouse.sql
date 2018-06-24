@@ -99,7 +99,7 @@ CREATE TABLE venta(
 create table tiempo (
     id_tiempo integer,
     anio integer,
-    mes integer
+    mes integer,
     primary key(id_tiempo)
 );
 
