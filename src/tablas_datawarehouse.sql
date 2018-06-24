@@ -89,11 +89,18 @@ CREATE TABLE venta(
         id_sucursal, 
         id_medio_pago
     ),
+    FOREIGN KEY (id_tiempo) REFERENCES tiempo(id_tiempo),
     FOREIGN KEY (id_cliente) REFERENCES cliente(id_cliente),
     FOREIGN KEY (id_producto) REFERENCES producto(id_producto),
     FOREIGN KEY (id_sucursal) REFERENCES distribucion_geografica(id_sucursal),
     FOREIGN KEY (id_medio_pago) REFERENCES medios(id_medio_pago)
 );
+
+create table tiempo (
+    id_tiempo integer,
+    anio integer,
+    mes integer
+)
 
 -- Tabla de Equivalencia para clientes
 CREATE TABLE te_cliente (
