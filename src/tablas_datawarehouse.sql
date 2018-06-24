@@ -101,7 +101,7 @@ create table tiempo (
     anio integer,
     mes integer
     primary key(id_tiempo)
-)
+);
 
 -- Tabla de Equivalencia para clientes
 CREATE TABLE te_cliente (
