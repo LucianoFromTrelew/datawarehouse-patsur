@@ -100,6 +100,7 @@ create table tiempo (
     id_tiempo integer,
     anio integer,
     mes integer
+    primary key(id_tiempo)
 )
 
 -- Tabla de Equivalencia para clientes
