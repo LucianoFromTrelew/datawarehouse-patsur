@@ -24,7 +24,7 @@ SELECT
 FROM
     DBLINK('sistema_actual', 'SELECT cod_cliente, nombre FROM cliente')
     AS consulta_actual(cod_cliente integer, nombre varchar(50))
-    LEFT JOIN
+    FULL OUTER JOIN
         DBLINK('sistema_viejo', 'select nro_cliente, nombre from cliente')
         AS consulta_viejo(nro_cliente integer, nombre varchar(50))
     ON consulta_viejo.nombre = consulta_actual.nombre;
