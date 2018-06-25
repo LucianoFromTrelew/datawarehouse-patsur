@@ -76,14 +76,14 @@ begin
 	INSERT INTO venta
 	SELECT
 	v.fecha_venta as fecha,
+	(select get_id_tiempo($1,$2)) as id_tiempo,
 	v.id_factura as id_factura, 
 	te_cliente.cliente_d_w as id_cliente, 
 	te_producto.producto_d_w as id_producto, 
 	v.cod_sucursal as id_sucursal, 
 	v.cod_medio_pago as id_medio_pago, 
 	v.monto_vendido as monto_vendido, 
-	v.cantidad_vendida as cantidad_vendida,
-	(select get_id_tiempo($1,$2)) as id_tiempo
+	v.cantidad_vendida as cantidad_vendida
 	FROM tmp_ventas v, te_cliente, te_producto
 	WHERE v.cod_cliente = te_cliente.cliente_s_v AND v.cod_producto =te_producto.producto_s_v
 	and id_factura not in (select id_factura from venta);
@@ -93,3 +93,5 @@ begin
 	return 0;
 end;
 $$ language plpgsql;
+
+SELECT poblar_datawarehouse_sistema_viejo(2015, 1);
