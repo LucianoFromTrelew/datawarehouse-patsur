@@ -1,11 +1,10 @@
-SELECT DBLINK_CONNECT(
-	'sistema_viejo',
-	'host=172.40.0.10 port=5432 password=admin user=admin dbname=facturacion'
-);
-
 create or replace function poblar_datawarehouse_sistema_viejo(anio integer, mes integer) returns integer as
 $$
 begin
+    PERFORM DBLINK_CONNECT(
+        'sistema_viejo',
+        'host=172.40.0.10 port=5432 password=admin user=admin dbname=facturacion'
+    );
 	-- crear tabla temporaria
 	create table tmp_ventas as
 	select
@@ -90,6 +89,7 @@ begin
 	and id_factura not in (select id_factura from venta);
 	
 	drop table tmp_ventas;
+    PERFORM DBLINK_DISCONNECT('sistema_viejo');
 	return 0;
 end;
 $$ language plpgsql;
