@@ -17,7 +17,6 @@ begin
 		v.nro_factura,
 		v.nro_cliente,
 		dv.nro_producto,
-		cast( (select (random() * 30) + 1) as integer) as cod_sucursal, -- Asignamos la sucursal at random, no hay en los sistemas viejo o nuevo rastros de sucursal
 		case 
 		when v.forma_pago = ''DEPOSITO'' then 5
 		when v.forma_pago = ''EFECTIVO'' then 1
@@ -44,7 +43,6 @@ begin
 		id_factura integer,
 		cod_cliente integer,
 		cod_producto integer,
-		cod_sucursal integer,
 		cod_medio_pago integer,
 		monto_vendido real,
 		cantidad_vendida integer,
@@ -80,12 +78,12 @@ begin
 	v.id_factura as id_factura, 
 	te_cliente.cliente_d_w as id_cliente, 
 	te_producto.producto_d_w as id_producto, 
-	v.cod_sucursal as id_sucursal, 
+	(SELECT id_sucursal FROM get_random_sucursal()) as id_sucursal, 
 	v.cod_medio_pago as id_medio_pago, 
 	v.monto_vendido as monto_vendido, 
 	v.cantidad_vendida as cantidad_vendida
 	FROM tmp_ventas v, te_cliente, te_producto
-	WHERE v.cod_cliente = te_cliente.cliente_s_v AND v.cod_producto =te_producto.producto_s_v
+	WHERE v.cod_cliente = te_cliente.cliente_s_v AND v.cod_producto = te_producto.producto_s_v
 	and id_factura not in (select id_factura from venta);
 	
 	drop table tmp_ventas;

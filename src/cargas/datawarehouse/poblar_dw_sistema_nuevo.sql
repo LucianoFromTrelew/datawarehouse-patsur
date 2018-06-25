@@ -1,4 +1,3 @@
-
 create or replace function poblar_datawarehouse_sistema_nuevo(anio integer, mes integer) returns integer as
 $$
 begin
@@ -20,7 +19,6 @@ begin
 		v.id_factura,
 		v.cod_cliente,
 		dv.cod_producto,
-		cast( (select (random() * 30) + 1) as integer) as cod_sucursal, -- Asignamos la sucursal at random, no hay en los sistemas viejo o nuevo rastros de sucursal
 		cod_medio_pago,
 		unidad * precio as monto_vendido,
 		unidad as cantidad_vendida,
@@ -43,7 +41,6 @@ begin
 		id_factura integer,
 		cod_cliente integer,
 		cod_producto integer,
-		cod_sucursal integer,
 		cod_medio_pago integer,
 		monto_vendido real,
 		cantidad_vendida integer,
@@ -78,12 +75,12 @@ begin
 	v.id_factura as id_factura, 
 	te_cliente.cliente_d_w as id_cliente, 
 	te_producto.producto_d_w as id_producto, 
-	v.cod_sucursal as id_sucursal, 
+	(SELECT id_sucursal FROM get_random_sucursal()) as id_sucursal, 
 	v.cod_medio_pago as id_medio_pago, 
 	v.monto_vendido as monto_vendido, 
 	v.cantidad_vendida as cantidad_vendida
 	FROM tmp_ventas v, te_cliente, te_producto
-	WHERE v.cod_cliente = te_cliente.cliente_s_n AND v.cod_producto =te_producto.producto_s_n
+	WHERE v.cod_cliente = te_cliente.cliente_s_n AND v.cod_producto = te_producto.producto_s_n
 	and id_factura not in (select id_factura from venta);
 	
 	drop table tmp_ventas;

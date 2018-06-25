@@ -19,3 +19,20 @@ begin
 	end if;
 	end;
 $$ language plpgsql;
+
+CREATE OR REPLACE FUNCTION get_random_sucursal() RETURNS SETOF distribucion_geografica AS $$
+/*
+    Devuelve una sucursal aleatoria
+    No recibe nada
+    Devuelve un registro de la tabla distribucion_geografica
+*/
+BEGIN
+    RETURN QUERY
+    SELECT *
+    FROM distribucion_geografica
+    ORDER BY random()
+    LIMIT 1;
+END;
+$$ LANGUAGE plpgsql;
+
+
