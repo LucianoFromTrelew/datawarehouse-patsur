@@ -1,12 +1,4 @@
 <Schema name="PatSur">
-  <Dimension type="StandardDimension" visible="true" name="Ciudad">
-    <Hierarchy name="New Hierarchy 0" visible="true" hasAll="true">
-      <Table name="ciudad" schema="public">
-      </Table>
-      <Level name="Ciudad" visible="true" column="id_ciudad" nameColumn="descripcion" type="Integer" internalType="int" uniqueMembers="false">
-      </Level>
-    </Hierarchy>
-  </Dimension>
   <Cube name="VENTAS" caption="CuboVentas" visible="true" description="Cubo OLAP de las ventas de PatSur" cache="false" enabled="true">
     <Table name="venta" schema="public">
     </Table>
@@ -20,14 +12,6 @@
         </Level>
       </Hierarchy>
     </Dimension>
-    <Dimension type="StandardDimension" visible="true" foreignKey="id_producto" highCardinality="false" name="Productos" description="Dimension de productos">
-      <Hierarchy name="Producto" visible="true" hasAll="true">
-        <Table name="producto" schema="public">
-        </Table>
-        <Level name="Producto" visible="true" column="id_producto" nameColumn="descripcion" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
-        </Level>
-      </Hierarchy>
-    </Dimension>
     <Dimension type="StandardDimension" visible="true" foreignKey="id_cliente" highCardinality="false" name="Cliente">
       <Hierarchy name="Cliente" visible="true" hasAll="true">
         <Table name="cliente" schema="public">
@@ -36,19 +20,37 @@
         </Level>
       </Hierarchy>
     </Dimension>
-    <Dimension type="StandardDimension" visible="true" foreignKey="id_sucursal" highCardinality="false" name="Sucursal">
-      <Hierarchy name="Sucursal" visible="true" hasAll="true">
-        <Table name="distribucion_geografica" schema="public">
-        </Table>
-        <Level name="Sucursal" visible="true" column="id_sucursal" nameColumn="descripcion" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
-        </Level>
-      </Hierarchy>
-    </Dimension>
     <Dimension type="StandardDimension" visible="true" foreignKey="id_medio_pago" highCardinality="false" name="MedioDePago">
       <Hierarchy name="MedioDePago" visible="true" hasAll="true">
         <Table name="medios" schema="public">
         </Table>
         <Level name="MedioDePago" visible="true" column="id_medio_pago" nameColumn="descripcion" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" foreignKey="id_producto" highCardinality="false" name="Producto">
+      <Hierarchy name="Producto" visible="true" hasAll="true">
+        <Table name="productos_dim_view" schema="public">
+        </Table>
+        <Level name="Categoria" visible="true" column="id_categoria" nameColumn="cat_descripcion" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+        <Level name="Subcategoria" visible="true" column="id_subcategoria" nameColumn="id_subcategoria" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+        <Level name="Producto" visible="true" column="id_producto" nameColumn="descripcion" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" foreignKey="id_sucursal" highCardinality="false" name="Sucursal">
+      <Hierarchy name="Sucursal" visible="true" hasAll="true">
+        <Table name="sucursales_dim_view" schema="public">
+        </Table>
+        <Level name="Region" visible="true" column="id_region" nameColumn="nombre_region" type="Integer" internalType="int" uniqueMembers="false">
+        </Level>
+        <Level name="Provincia" visible="true" column="id_provincia" nameColumn="nombre_provincia" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular">
+        </Level>
+        <Level name="Ciudad" visible="true" column="id_ciudad" nameColumn="nombre_ciudad" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular">
+        </Level>
+        <Level name="Sucursal" visible="true" column="id_sucursal" nameColumn="nombre_sucursal" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
         </Level>
       </Hierarchy>
     </Dimension>
