@@ -12,6 +12,7 @@ services:
       - POSTGRES_USER=admin
       - POSTGRES_DB=facturacion
       - PGDATA=/volume/data
+    restart: always
     networks:
       facturacion:
         ipv4_address: 172.40.0.10
@@ -27,6 +28,7 @@ services:
       - POSTGRES_USER=admin
       - POSTGRES_DB=facturacion
       - PGDATA=/volume/data
+    restart: always
     networks:
       facturacion:
         ipv4_address: 172.40.0.20
@@ -44,6 +46,10 @@ services:
       - PGDATA=/volume/data
     ports:
       - "6666:5432"
+    depends_on: 
+      - actual
+      - viejo
+    restart: always
     networks:
       facturacion:
         ipv4_address: 172.40.0.30
