@@ -93,5 +93,3 @@ begin
 	return 0;
 end;
 $$ language plpgsql;
-
-SELECT poblar_datawarehouse_sistema_viejo(2015, 1);
