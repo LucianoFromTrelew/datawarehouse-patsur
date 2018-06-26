@@ -53,6 +53,18 @@ services:
     networks:
       facturacion:
         ipv4_address: 172.40.0.30
+  pentaho-server:
+    image: "wmarinho/pentaho-biserver"
+    container_name: "pentaho-server"
+    hostname: pentaho
+    ports:
+      - "7070:8080"
+    depends_on:
+      - datawarehouse
+    restart: always
+    networks:
+      facturacion:
+        ipv4_address: 172.40.0.40
 
 #############################################################
 #############################################################

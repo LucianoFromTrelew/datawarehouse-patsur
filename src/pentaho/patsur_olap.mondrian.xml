@@ -1,0 +1,62 @@
+<Schema name="PatSur">
+  <Cube name="VENTAS" caption="CuboVentas" visible="true" description="Cubo OLAP de las ventas de PatSur" cache="false" enabled="true">
+    <Table name="venta" schema="public">
+    </Table>
+    <Dimension type="TimeDimension" visible="true" foreignKey="id_tiempo" highCardinality="false" name="Tiempo">
+      <Hierarchy name="Tiempo" visible="true" hasAll="true">
+        <Table name="tiempo" schema="public">
+        </Table>
+        <Level name="TiempoAnio" visible="true" column="anio" nameColumn="anio" type="Integer" internalType="int" uniqueMembers="false" levelType="TimeYears" hideMemberIf="Never">
+        </Level>
+        <Level name="TiempoMes" visible="true" column="mes" nameColumn="mes" type="Integer" internalType="int" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" foreignKey="id_cliente" highCardinality="false" name="Cliente">
+      <Hierarchy name="Cliente" visible="true" hasAll="true">
+        <Table name="cliente" schema="public">
+        </Table>
+        <Level name="Cliente" visible="true" column="id_cliente" nameColumn="nombre" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" foreignKey="id_medio_pago" highCardinality="false" name="MedioDePago">
+      <Hierarchy name="MedioDePago" visible="true" hasAll="true">
+        <Table name="medios" schema="public">
+        </Table>
+        <Level name="MedioDePago" visible="true" column="id_medio_pago" nameColumn="descripcion" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" foreignKey="id_producto" highCardinality="false" name="Producto">
+      <Hierarchy name="Producto" visible="true" hasAll="true">
+        <Table name="productos_dim_view" schema="public">
+        </Table>
+        <Level name="Categoria" visible="true" column="id_categoria" nameColumn="cat_descripcion" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+        <Level name="Subcategoria" visible="true" column="id_subcategoria" nameColumn="id_subcategoria" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+        <Level name="Producto" visible="true" column="id_producto" nameColumn="descripcion" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Dimension type="StandardDimension" visible="true" foreignKey="id_sucursal" highCardinality="false" name="Sucursal">
+      <Hierarchy name="Sucursal" visible="true" hasAll="true">
+        <Table name="sucursales_dim_view" schema="public">
+        </Table>
+        <Level name="Region" visible="true" column="id_region" nameColumn="nombre_region" type="Integer" internalType="int" uniqueMembers="false">
+        </Level>
+        <Level name="Provincia" visible="true" column="id_provincia" nameColumn="nombre_provincia" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular">
+        </Level>
+        <Level name="Ciudad" visible="true" column="id_ciudad" nameColumn="nombre_ciudad" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular">
+        </Level>
+        <Level name="Sucursal" visible="true" column="id_sucursal" nameColumn="nombre_sucursal" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
+        </Level>
+      </Hierarchy>
+    </Dimension>
+    <Measure name="Unidad" column="cantidad_vendida" datatype="Numeric" aggregator="sum" description="Medida de productos" visible="true">
+    </Measure>
+    <Measure name="Precio" column="monto_vendido" datatype="Numeric" aggregator="sum" description="Monto vendido" visible="true">
+    </Measure>
+  </Cube>
+</Schema>
