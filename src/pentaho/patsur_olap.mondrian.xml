@@ -14,8 +14,10 @@
     </Dimension>
     <Dimension type="StandardDimension" visible="true" foreignKey="id_cliente" highCardinality="false" name="Cliente">
       <Hierarchy name="Cliente" visible="true" hasAll="true">
-        <Table name="cliente" schema="public">
+        <Table name="clientes_dim_view" schema="public">
         </Table>
+        <Level name="Tipo cliente" visible="true" column="id_tipo" nameColumn="descripcion" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular">
+        </Level>
         <Level name="Cliente" visible="true" column="id_cliente" nameColumn="nombre" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
         </Level>
       </Hierarchy>
@@ -44,11 +46,11 @@
       <Hierarchy name="Sucursal" visible="true" hasAll="true">
         <Table name="sucursales_dim_view" schema="public">
         </Table>
-        <Level name="Region" visible="true" column="id_region" nameColumn="nombre_region" type="Integer" internalType="int" uniqueMembers="false">
+        <Level name="Region" visible="true" column="id_region" nameColumn="nombre_region" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
         </Level>
-        <Level name="Provincia" visible="true" column="id_provincia" nameColumn="nombre_provincia" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular">
+        <Level name="Provincia" visible="true" column="id_provincia" nameColumn="nombre_provincia" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
         </Level>
-        <Level name="Ciudad" visible="true" column="id_ciudad" nameColumn="nombre_ciudad" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular">
+        <Level name="Ciudad" visible="true" column="id_ciudad" nameColumn="nombre_ciudad" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
         </Level>
         <Level name="Sucursal" visible="true" column="id_sucursal" nameColumn="nombre_sucursal" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
         </Level>
