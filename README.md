@@ -41,4 +41,6 @@ Para deterner los contenedores, ejecutar el comando:
 docker-compose stop
 ```
 
+### Pentaho
+
 Para ingresar al servidor de Pentaho BI, en un navegador ingresar la dirección `localhost:7070`, ingresar como usuario `admin` (contraseña `password`)
