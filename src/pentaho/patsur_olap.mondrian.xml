@@ -4,11 +4,13 @@
     </Table>
     <Dimension type="TimeDimension" visible="true" foreignKey="id_tiempo" highCardinality="false" name="Tiempo">
       <Hierarchy name="Tiempo" visible="true" hasAll="true">
-        <Table name="tiempo" schema="public">
+        <Table name="tiempo_dim_view" schema="public">
         </Table>
-        <Level name="TiempoAnio" visible="true" column="anio" nameColumn="anio" type="Integer" internalType="int" uniqueMembers="false" levelType="TimeYears" hideMemberIf="Never">
+        <Level name="A&#241;o" visible="true" column="anio" type="Integer" internalType="int" uniqueMembers="false" levelType="TimeYears">
         </Level>
-        <Level name="TiempoMes" visible="true" column="mes" nameColumn="mes" type="Integer" internalType="int" uniqueMembers="false" levelType="TimeMonths" hideMemberIf="Never">
+        <Level name="Trimestre" visible="true" column="trimestre" type="String" internalType="String" uniqueMembers="false" levelType="TimeQuarters">
+        </Level>
+        <Level name="Mes" visible="true" column="mes" nameColumn="nombre_mes" type="Integer" internalType="int" uniqueMembers="false" levelType="TimeMonths">
         </Level>
       </Hierarchy>
     </Dimension>
@@ -16,7 +18,7 @@
       <Hierarchy name="Cliente" visible="true" hasAll="true">
         <Table name="clientes_dim_view" schema="public">
         </Table>
-        <Level name="Tipo cliente" visible="true" column="id_tipo" nameColumn="descripcion" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular">
+        <Level name="Tipo cliente" visible="true" column="id_tipo" nameColumn="descripcion" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
         </Level>
         <Level name="Cliente" visible="true" column="id_cliente" nameColumn="nombre" type="Integer" internalType="int" uniqueMembers="false" levelType="Regular" hideMemberIf="Never">
         </Level>
