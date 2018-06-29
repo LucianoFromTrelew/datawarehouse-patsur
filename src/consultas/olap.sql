@@ -1,6 +1,17 @@
 SELECT
     t.anio AS "Año", 
     t.mes AS "Mes",
+    CASE 
+        WHEN t.mes >= 1 AND t.mes <= 3 THEN
+            'Primer trimestre'
+        WHEN t.mes >= 4 AND t.mes <= 6 THEN
+            'Segundo trimestre'
+        WHEN t.mes >= 7 AND t.mes <= 9 THEN
+            'Tercer trimestre'
+        WHEN t.mes >= 10 AND t.mes <= 12 THEN
+            'Cuarto trimestre'
+        ELSE 'INCORRECTO'
+    END AS "Trimestre",
     cli.nombre AS "Cliente",
     prod.descripcion AS "Producto",
     suc.descripcion AS "Sucursal",
