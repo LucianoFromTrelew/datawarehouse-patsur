@@ -212,7 +212,25 @@ Un Datawarehouse o almacén de datos es definido por \autocite{elmasri} como \em
 
 \subsection{Definición}
 
+Se utilizó la siguiente estructura de tablas.
+
+\begin{itemize}
+    \item Categoria(\textbf{id\_categoria}, \textbf{id\_subcategoria}, descripcion)
+    \item Producto(\textbf{id\_producto}, \underline{id\_categoria}, \underline{id\_subcategoria}, descripcion)
+    \item Medios(\textbf{id\_medio\_pago}, descripcion)
+    \item Region(\textbf{id\_region}, descripcion)
+    \item Provincia(\textbf{id\_provincia}, \underline{id\_region}, descripcion)
+    \item Ciudad(\textbf{id\_ciudad}, \underline{id\_provincia}, descripcion)
+    \item DistribucionGeografica(\textbf{id\_sucursal}, \underline{id\_ciudad}, descripcion)
+    \item TipoCliente(\textbf{id\_tipo}, descripcion)
+    \item Cliente(\textbf{id\_cliente}, \underline{id\_tipo}, nombre)
+    \item Tiempo(\textbf{id\_tiempo}, anio, mes)
+    \item Venta(fecha, \underline{\textbf{id\_tiempo}}, \underline{\textbf{id\_factura}}, \underline{\textbf{id\_cliente}}, \underline{\textbf{id\_producto}}, \underline{\textbf{id\_sucursal}}, \underline{\textbf{id\_medio\_pago}}, monto\_vendido, cantidad\_vendida, descripcion)
+\end{itemize}
+
 \subsection{Poblado}
+
+
 
 \subsubsection{\emph{ETL}}
 
