@@ -220,10 +220,145 @@ Este último esquema es el adecuado para implementar el datawarhouse que requier
 
 \subsection{Definición}
 
+Se utilizó la siguiente estructura de tablas.
+
+\begin{itemize}
+    \item Categoria(\textbf{id\_categoria}, \textbf{id\_subcategoria}, descripcion)
+    \item Producto(\textbf{id\_producto}, \underline{id\_categoria}, \underline{id\_subcategoria}, descripcion)
+    \item Medios(\textbf{id\_medio\_pago}, descripcion)
+    \item Region(\textbf{id\_region}, descripcion)
+    \item Provincia(\textbf{id\_provincia}, \underline{id\_region}, descripcion)
+    \item Ciudad(\textbf{id\_ciudad}, \underline{id\_provincia}, descripcion)
+    \item DistribucionGeografica(\textbf{id\_sucursal}, \underline{id\_ciudad}, descripcion)
+    \item TipoCliente(\textbf{id\_tipo}, descripcion)
+    \item Cliente(\textbf{id\_cliente}, \underline{id\_tipo}, nombre)
+    \item Tiempo(\textbf{id\_tiempo}, anio, mes)
+    \item Venta(fecha, \underline{\textbf{id\_tiempo}}, \underline{\textbf{id\_factura}}, \underline{\textbf{id\_cliente}}, \underline{\textbf{id\_producto}}, \underline{\textbf{id\_sucursal}}, \underline{\textbf{id\_medio\_pago}}, monto\_vendido, cantidad\_vendida, descripcion)
+\end{itemize}
+
 \subsection{Poblado}
+
+Todos los \emph{scripts} mencionados a continuación se pueden encontrar en el subdirectorio \textbf{scripts/cargas/datawarehouse}
+
+Para poder relizar la integración de los datos se decidió utilizar tablas de equivalencia para las tablas Producto y Cliente de ambos sistemas de facturación.
+
+Se utilizó la siguiente estructura:
+
+\begin{itemize}
+    \item TECliente(cliente\_s\_v, cliente\_s\_n, cliente\_d\_w)
+    \item TEProducto(producto\_s\_v, producto\_s\_n, producto\_d\_w)
+\end{itemize}
+
+Para las tablas de categoría, región, provincia, ciudad, sucursal, medio de pago y tipo de cliente se utilizaron los mismos datos en ambos sistemas o se fabricaron datos para poner en el datawarehouse.
+
+Luego se implementaron los scripts para que, desde el datawarehouse, se realicen una consultas remotas a los sistemas nuevo y viejo, se realizara la equivalencia y se insertaran en las tablas de equivalencia. Detallado a continuacion. 
+
+\begin{lstlisting}[title=Inserción a la tabla de equivalencia de cliente]
+
+-- Conexión con el sistema de facturación viejo
+SELECT DBLINK_CONNECT(
+	'sistema_viejo',
+	'host=172.40.0.10 port=5432 password=admin user=admin dbname=facturacion'
+);
+
+-- Conexión con el sistema actual
+SELECT DBLINK_CONNECT(
+	'sistema_actual',
+	'host=172.40.0.20 port=5432 password=admin user=admin dbname=facturacion'
+);
+
+-- Inserta en la tabla de equivalencia de clientes
+-- teniendo en cuenta que pueden haber clientes con el mismo nombre,
+-- en cuyo caso los inserta en la misma fila
+
+INSERT INTO te_cliente (cliente_s_n, cliente_s_v)
+SELECT
+    consulta_actual.cod_cliente,
+    consulta_viejo.nro_cliente
+FROM
+    DBLINK('sistema_actual', 'SELECT cod_cliente, nombre FROM cliente')
+    AS consulta_actual(cod_cliente integer, nombre varchar(50))
+    FULL OUTER JOIN
+        DBLINK('sistema_viejo', 'select nro_cliente, nombre from cliente')
+        AS consulta_viejo(nro_cliente integer, nombre varchar(50))
+    ON consulta_viejo.nombre = consulta_actual.nombre;
+    
+\end{lstlisting}
+
+Para la inserción en la tabla de equivalencia de \textbf{productos} el procedimiento es similar, considerando el nombre de los productos.
+
+Los scripts se pueden encontrar en \textbf{te\_cliente.sql} y \textbf{te\_producto.sql}
+
+Se corren ambos scripts y ya tenemos a nuestra disposición las tablas de equivalencia para relizar el \textbf{ETL}.
+
+Con respecto al resto de las tablas, se utilizan los scripts homónimos a las tablas a poblar. Por ejemplo: \textbf{categoria.sql}, \textbf{region.sql}
+
 
 \subsubsection{\emph{ETL}}
 
+Para el etl se crea una tabla temporal en la cual albergar las ventas para un mes y año determinados, y desde aquí realizar las inserciones a las tablasd de Cliente, Producto, Venta y Tiempo. Este procedimiento realizado a través de una función a la cual se le pasa el mes y año a insertar en el \emph{Datawarehouse}
+
+La creación de la tabla temporal, dentro de la función se realiza de la siguiente manera:
+
+\begin{lstlisting}[title=Creación de la Tabla Temporal]
+-- Conexión con el sitio del cual conseguir los datos
+PERFORM DBLINK_CONNECT(
+    'sistema_actual',
+    'host=172.40.0.20 port=5432 password=admin user=admin dbname=facturacion'
+);
+
+-- Creación tabla tempora
+create table tmp_ventas as
+select
+* 
+from 
+dblink(
+    'sistema_actual', 
+    'select
+    fecha_venta,
+    v.id_factura,
+    v.cod_cliente,
+    dv.cod_producto,
+    cod_medio_pago,
+    unidad * precio as monto_vendido,
+    unidad as cantidad_vendida,
+    p.nombre as nombre_producto,
+    p.cod_categoria,
+    p.cod_subcategoria,
+    precio,
+    c.nombre as nombre_cliente,
+    c.cod_tipo
+    from venta v, cliente c, detalle_venta dv, producto p
+    where 
+    v.id_factura = dv.id_factura
+    and v.cod_cliente = c.cod_cliente
+    and dv.cod_producto = p.cod_producto 
+    and date_part ( ''month'',   fecha_venta) =  '|| $2 ||'
+            and date_part (''year'',  fecha_venta) = ' || $1 ||'
+    order by 1'
+) as st(
+    fecha_venta date,
+    id_factura integer,
+    cod_cliente integer,
+    cod_producto integer,
+    cod_medio_pago integer,
+    monto_vendido real,
+    cantidad_vendida integer,
+    nombre_producto varchar(100),
+    cod_categoria integer,
+    cod_subcategoria integer,
+    precio real,
+    nombre_cliente varchar(100),
+    cod_tipo integer
+);
+\end{lstlisting}
+
+La selección y de datos y el armado de la tabla temporal considera la estructura del sitio del cual extrae los datos, lo cual hace que los campos que selecciona no sean los mismos cuando se extrae del sistema nuevo que cuando se extrae del sistema nuevo. Luego se realizan las inserciones a Producto, Cliente y Venta desde la tabla temporal. Una vez realizada la inserción, se realiza un drop de la tabla.
+
+
+\emph{Ambos manejos ETL están en los \emph{scripts} \textbf{poblar\_dw\_sistema\_viejo.sql} y \textbf{poblar\_dw\_sistema\_nuevo.sql}.}
+
+Para facilitar la utilización del \emph{Datawarehouse} por parte de la Herramienta de BI se generaron vistas que reduzcan el esquema de Copo de Nieve planteado a uno de Estrella. Esta definción se encuentra en el archivo \textbf{src/vistas\_datawarehouse.sql}
 
 \subsection{Explotación}
 
