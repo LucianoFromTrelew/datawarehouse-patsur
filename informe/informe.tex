@@ -356,7 +356,7 @@ dblink(
 La selección y de datos y el armado de la tabla temporal considera la estructura del sitio del cual extrae los datos, lo cual hace que los campos que selecciona no sean los mismos cuando se extrae del sistema nuevo que cuando se extrae del sistema nuevo. Luego se realizan las inserciones a Producto, Cliente y Venta desde la tabla temporal. Una vez realizada la inserción, se realiza un drop de la tabla.
 
 
-\emph{Ambos manejos ETL están en los \emph{scripts} \textbf{poblar\_dw\_sistema\_viejo.sql} y \textbf{poblar\_dw\_sistema\_nuevo.sql}.}
+\emph{Ambos manejos ETL están en los \emph{scripts} \textbf{poblar\_dw\_sistema\_viejo.sql} \newline y \textbf{poblar\_dw\_sistema\_nuevo.sql}.}
 
 Para facilitar la utilización del \emph{Datawarehouse} por parte de la Herramienta de BI se generaron vistas que reduzcan el esquema de Copo de Nieve planteado a uno de Estrella. Esta definción se encuentra en el archivo \textbf{src/vistas\_datawarehouse.sql}
 
