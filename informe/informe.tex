@@ -96,9 +96,9 @@ El \emph{script} correspondiente para la definición de las tablas previamente d
 
 \subsubsection{Poblado}
 
-\emph{Los siguientes \emph{scripts} mencionados se encuentran en el subdirectorio \dq{scripts/cargas/sistema\_viejo} y en \dq{scripts/cargas/sistema\_viejo/sql}}} 
+\emph{Los siguientes \emph{scripts} mencionados se encuentran en el subdirectorio \dq{scripts/cargas/sistema\_viejo} y en \dq{scripts/cargas/sistema\_viejo/sql}} 
 
-\\~
+~\\
 
 A través de \emph{scripts} escritos en Python (\textbf{productos.py} y \textbf{categorias.py}), se pudieron extraer datos de la \emph{API} de MercadoLibre \autocite{api} para disponer de datos con cierto grado de veracidad. Estos \emph{scripts} se encargan de consultar la fuente de datos, y de armar \emph{scripts} en SQL (\textbf{sql/productos} y \textbf{categorias.sql}) para la inserción en la tabla correspondiente (adecuando los datos acordemente al modelo de la base de datos)  
 
@@ -208,7 +208,15 @@ NOTICE:  [3/100] INSERTANDO DETALLE (164479, 612842726, 38, 8499)
 
 \subsection{Marco teórico}
 
-Un Datawarehouse o almacén de datos es definido por \autocite{elmasri} como \emph{una colección de datos orientada al sujeto, integrada, no volátil y de tiempo variable para el soporte de las decisiones de los directivos} 
+Un Datawarehouse o almacén de datos es definido por \autocite{elmasri-dw} como \emph{una colección de datos orientada al sujeto, integrada, no volátil y de tiempo variable para el soporte de las decisiones de los directivos} 
+
+Existen dos esquemas posibles para la implementación de un datawarehouse. El primero, el \textbf{esquema estrella}, consiste en tener una única \emph{Tabla de Hechos} como objeto central del almacén, y distintas \emph{Tablas de Dimensión} circundantes. La Tabla de Hechos se relaciona con las dimensiones mediante una \emph{clave foránea}, pero las Tablas de Dimesión no se relacionan entre sí.
+
+En este esquema se \dq{desnormalizan} los datos de las bases de datos operacionales de las cuales se nutren el datawarehouse para tener mayor performance (pero con redundancia en los datos)
+
+El otro esquema posible es el \textbf{copo de nieve}. Esta alternativa propone que las Tablas de Dimensión tengan Tablas de Dimesión asociadas a ella. De esta forma, los datos se mantienen normalizados y las relaciones más pequeñas.
+
+Este último esquema es el adecuado para implementar el datawarhouse que requiere \dq{PatSur}.
 
 \subsection{Definición}
 
@@ -351,6 +359,50 @@ La selección y de datos y el armado de la tabla temporal considera la estructur
 \emph{Ambos manejos ETL están en los \emph{scripts} \textbf{poblar\_dw\_sistema\_viejo.sql} y \textbf{poblar\_dw\_sistema\_nuevo.sql}.}
 
 \subsection{Explotación}
+
+Teniendo el datawarhouse creado y con datos cargados a partir de las bases de datos operacionales (luego de convertirlos con los procesos de ETL definidos), se le puede realizar distintas consultas que provean soporte para la toma de decisiones de \dq{PatSur}
+
+\subsection{Distintas perspectivas de las ventas}
+
+Una diferencia vital entre un datawarehouse y una base de datos operativa es la capacidad del primero de soportar operaciones \textbf{OLAP}. El \emph{área de procesamiento analítico en línea} (\emph{Online Analytical Processing}, \emph{OLAP}) trata de las herramientas y de las técnicas para el análisis de los datos que pueden dar respuestas casi instantáneas a las consultas que soliciten datos resumidos, aunque la base de datos (datawarehouse) sea extremedamente grande \autocite{silberschatz-olap}
+
+Para mostrar distintas perspectivas y agrupaciones posibles con respecto a las ventas de la empresa, se puede utilizar una de las extensiones de SQL-1999: la claúsula \textbf{CUBE} 
+
+Debido a la extensión de la consulta, se la puede encontrar en el archivo \textbf{consultas/olap.sql} 
+
+Los siguientes criterios por los cuales se agrupa la cantidad de unidades vendidas y el monto total vendido son:
+
+\begin{itemize}
+    \item Fecha
+    \item Cliente
+    \item Producto
+    \item Medio de pago
+    \item Sucursal
+    \item Ciudad
+    \item Provincia
+\end{itemize}
+
+Se toma un criterio por vez, y también se agrupa por las distintas combinaciones posibles
+
+
+
+\subsection{Clientes que generan mayores ingresos}
+
+La consulta del archivo \textbf{consultas/clientes\_mas\_compradores.sql} utiliza otra extensión de SQL-1999, \textbf{RANK()} para indicar numéricamente un orden de los registros según un criterio indicado  
+
+\vspace*{5mm}
+\begin{lstlisting}[title=Clientes que generan mayores ingresos para la empresa]
+SELECT 
+    cli.id_cliente AS "ID Cliente", 
+    cli.nombre AS "Nombre", 
+    CAST(SUM(ven.monto_vendido) AS bigint) AS "Total vendido", 
+    RANK() OVER (ORDER BY SUM(ven.monto_vendido) DESC) AS "Mayores compradores" 
+FROM venta AS ven 
+    JOIN cliente AS cli ON ven.id_cliente=cli.id_cliente 
+GROUP BY cli.id_cliente;
+\end{lstlisting}
+
+
 
 
 \section{Herramienta de \emph{BI}: \emph{Pentaho}}
