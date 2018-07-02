@@ -37,3 +37,34 @@ CREATE VIEW clientes_dim_view AS
     FROM 
         cliente AS cli 
         LEFT JOIN tipo_cliente AS tc ON cli.id_tipo=tc.id_tipo;
+
+CREATE VIEW tiempo_dim_view AS
+    SELECT
+        t.id_tiempo,
+        t.anio,
+        CASE 
+            WHEN t.mes >= 1 AND t.mes <= 3
+                THEN 'Primer trimestre'
+            WHEN t.mes >= 4 AND t.mes <= 6
+                THEN 'Segundo trimestre'
+            WHEN t.mes >= 7 AND t.mes <= 9
+                THEN 'Tercer trimestre'
+            WHEN t.mes >= 10 AND t.mes <= 12
+                THEN 'Cuarto trimestre'
+        END AS trimestre,
+        t.mes,
+        CASE 
+            WHEN t.mes=1 THEN 'ENERO'
+            WHEN t.mes=2 THEN 'FEBRERO'
+            WHEN t.mes=3 THEN 'MARZO'
+            WHEN t.mes=4 THEN 'ABRIL'
+            WHEN t.mes=5 THEN 'MAYO'
+            WHEN t.mes=6 THEN 'JUNIO'
+            WHEN t.mes=7 THEN 'JULIO'
+            WHEN t.mes=8 THEN 'AGOST'
+            WHEN t.mes=9 THEN 'SEPTIEMBRE'
+            WHEN t.mes=10 THEN 'OCTUBRE'
+            WHEN t.mes=11 THEN 'NOVIEMBRE'
+            WHEN t.mes=12 THEN 'DICIEMBRE'
+        END AS nombre_mes
+    FROM tiempo AS t;
