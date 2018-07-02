@@ -358,6 +358,8 @@ La selección y de datos y el armado de la tabla temporal considera la estructur
 
 \emph{Ambos manejos ETL están en los \emph{scripts} \textbf{poblar\_dw\_sistema\_viejo.sql} y \textbf{poblar\_dw\_sistema\_nuevo.sql}.}
 
+Para facilitar la utilización del \emph{Datawarehouse} por parte de la Herramienta de BI se generaron vistas que reduzcan el esquema de Copo de Nieve planteado a uno de Estrella. Esta definción se encuentra en el archivo \textbf{src/vistas\_datawarehouse.sql}
+
 \subsection{Explotación}
 
 Teniendo el datawarhouse creado y con datos cargados a partir de las bases de datos operacionales (luego de convertirlos con los procesos de ETL definidos), se le puede realizar distintas consultas que provean soporte para la toma de decisiones de \dq{PatSur}
