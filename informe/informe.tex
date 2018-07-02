@@ -274,6 +274,115 @@ GROUP BY cli.id_cliente;
 
 \section{Herramienta de \emph{BI}: \emph{Pentaho}}
 
+\emph{Pentaho BI Suite} es un conjunto de programas para el soporte de la toma de decisiones y \emph{Business Intelligence} \autocite{wikipedia-pentaho} de la empresa Hitachi. 
+
+Para este trabajo de laboratorio se utilizaron las herramientas \underline{\href{https://mondrian.pentaho.com/documentation/workbench.php}{\emph{Schema Workbench}}} y \underline{\href{https://help.pentaho.com/Documentation/7.1/Installation}{\emph{BI Server}}} (este último se implementó mediante contenedores de \docker{}, con las configuraciones descriptas en la sección 1)
+
+La herramienta \emph{Schema Worbench} se utilizó para definir el esquema que contiene el cubo OLAP, cuyas medidas y dimensiones son las requeridas por \dq{PatSur}. Estas son:
+
+\begin{itemize}
+    \item Medidas:
+        \begin{enumerate}
+            \item Unidades vendidas
+            \item Monto recaudado
+        \end{enumerate}
+    \item Dimensiones:
+        \begin{enumerate}
+            \item Fecha
+            \item Sucursales
+            \item Clientes
+            \item Productos
+            \item Medios de pago
+        \end{enumerate}
+\end{itemize}
+
+
+\subsection*{Integración de \emph{Schema Workbench} con \emph{PostgreSQL}}
+
+Cabe aclarar que para conectarse a una base de datos \emph{PostgreSQL} desde el \emph{Schema Workbench} hace falta descargar los \underline{\href{https://jdbc.postgresql.org/}{drivers JDBC para el motor}} y ubicarlos en el directorio \dq{drivers} dentro del directorio de instalación de \emph{Schema Workbench} 
+
+\subsection{Definición del esquema y del cubo OLAP}
+
+Una vez instalado el driver correspondiente para el motor y con el datawarehouse corriendo, seguir la siguiente secuencia de pasos para poder conectarse a la base de datos y crear el cubo OLAP:
+
+\begin{enumerate}
+    \item Crear la conexión con el datawarehouse
+    \begin{enumerate}
+        \item Hacer click en \texttt{Options}
+        \item Seleccionar \texttt{Connection...}
+        \item Los datos para la conexión con el datawarehouse son los siguientes:
+        \begin{itemize}
+            \item Connection Type: PostgreSQL
+            \item \textbf{Connection Name}: conn\_datawarehouse 
+            \item Host Name: 172.40.0.30
+            \item Database Name: datawarehouse
+            \item Port Number: 5432
+            \item User Name: admin
+            \item Password: admin
+        \end{itemize}
+        \item Hacer click en \texttt{OK}
+    \end{enumerate}
+    \item Crear un nuevo esquema
+    \begin{enumerate}
+        \item Hacer click en \texttt{File}
+        \item Seleccionar \texttt{New}
+        \item Seleccionar \texttt{Schema}
+    \end{enumerate}
+    \item Crear un nuevo cubo
+    \begin{enumerate}
+        \item Click derecho sobre el esquema recién creado
+        \item Seleccionar \texttt{Add cube}
+    \end{enumerate}
+    \item Definir la Tabla de Hechos para el cubo
+    \begin{enumerate}
+        \item Click derecho sobre el cubo
+        \item Seleccionar \texttt{Add Table}
+    \end{enumerate}
+    \item Definir las medidas del cubo
+    \begin{enumerate}
+        \item Click derecho sobre el cubo
+        \item Seleccionar \texttt{Add Measure}
+        \item Definir qué columna de la Tabla de Hechos será utilizada como medida y con qué operación (cantidad de valores distintos, suma, cuenta, etc.)
+    \end{enumerate}
+    \item Definir las dimensiones del cubo
+    \begin{enumerate}
+        \item Click derecho sobre el cubo
+        \item Seleccionar \texttt{Add Dimension}
+        \item Cada dimensión tiene una \emph{jerarquía}, la cual debe estar relacionada con una tabla del datawarehouse 
+        \item Cada jerarquía también debe tener por lo menos un nivel definido; cada nivel debe estar relacionado con una columna de la tabla de la jerarquía
+    \end{enumerate}
+    \item Publicar el esquema en el servidor
+    \begin{enumerate}
+        \item Hacer click en \texttt{File}
+        \item Seleccionar \texttt{Publish...}
+        \item Los datos que se deben ingresar para publicar el esquema son los siguientes:
+        \begin{itemize}
+            \item URL: localhost:7070
+            \item Credentials:
+                \begin{itemize}
+                    \item User: admin
+                    \item Password: password
+                \end{itemize}
+        \end{itemize}
+        \item Hacer click en \texttt{OK}
+    \end{enumerate}
+\end{enumerate}
+
+Una vez publicado el esquema en el servidor, navegar a la dirección \emph{localhost:7070} e ingresar las credenciales previamente descriptas (Username: admin, Password: password). 
+
+Antes de visualizar el cubo, se debe crear la conexión con el datawarehouse. Para ello, seguir los siguientes pasos:
+
+\begin{enumerate}
+    \item Hacer click en \texttt{Manage Data Sources}
+    \item Hacer click en el engranaje
+    \item Seleccionar \texttt{New Connection...}
+    \item Ingresar \textbf{los mismos datos} con los cuales se definió la conexión al datawarehouse en el \emph{Schema Workbench}   
+    \item Volver a la pantalla de inicio
+    \item Hacer click en \texttt{Create New}
+    \item Seleccionar \texttt{JPivot View} 
+    \item Seleccionar el esquema y el cubo adecuado, y hacer click en \texttt{OK} 
+\end{enumerate}
+
 
 
 
