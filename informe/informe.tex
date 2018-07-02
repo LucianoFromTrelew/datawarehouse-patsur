@@ -227,6 +227,50 @@ Este último esquema es el adecuado para implementar el datawarhouse que requier
 
 \subsection{Explotación}
 
+Teniendo el datawarhouse creado y con datos cargados a partir de las bases de datos operacionales (luego de convertirlos con los procesos de ETL definidos), se le puede realizar distintas consultas que provean soporte para la toma de decisiones de \dq{PatSur}
+
+\subsection{Distintas perspectivas de las ventas}
+
+Una diferencia vital entre un datawarehouse y una base de datos operativa es la capacidad del primero de soportar operaciones \textbf{OLAP}. El \emph{área de procesamiento analítico en línea} (\emph{Online Analytical Processing}, \emph{OLAP}) trata de las herramientas y de las técnicas para el análisis de los datos que pueden dar respuestas casi instantáneas a las consultas que soliciten datos resumidos, aunque la base de datos (datawarehouse) sea extremedamente grande \autocite{silberschatz-olap}
+
+Para mostrar distintas perspectivas y agrupaciones posibles con respecto a las ventas de la empresa, se puede utilizar una de las extensiones de SQL-1999: la claúsula \textbf{CUBE} 
+
+Debido a la extensión de la consulta, se la puede encontrar en el archivo \textbf{consultas/olap.sql} 
+
+Los siguientes criterios por los cuales se agrupa la cantidad de unidades vendidas y el monto total vendido son:
+
+\begin{itemize}
+    \item Fecha
+    \item Cliente
+    \item Producto
+    \item Medio de pago
+    \item Sucursal
+    \item Ciudad
+    \item Provincia
+\end{itemize}
+
+Se toma un criterio por vez, y también se agrupa por las distintas combinaciones posibles
+
+
+
+\subsection{Clientes que generan mayores ingresos}
+
+La consulta del archivo \textbf{consultas/clientes\_mas\_compradores.sql} utiliza otra extensión de SQL-1999, \textbf{RANK()} para indicar numéricamente un orden de los registros según un criterio indicado  
+
+\vspace*{5mm}
+\begin{lstlisting}[title=Clientes que generan mayores ingresos para la empresa]
+SELECT 
+    cli.id_cliente AS "ID Cliente", 
+    cli.nombre AS "Nombre", 
+    CAST(SUM(ven.monto_vendido) AS bigint) AS "Total vendido", 
+    RANK() OVER (ORDER BY SUM(ven.monto_vendido) DESC) AS "Mayores compradores" 
+FROM venta AS ven 
+    JOIN cliente AS cli ON ven.id_cliente=cli.id_cliente 
+GROUP BY cli.id_cliente;
+\end{lstlisting}
+
+
+
 
 \section{Herramienta de \emph{BI}: \emph{Pentaho}}
 
