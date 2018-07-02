@@ -230,6 +230,60 @@ Se utilizó la siguiente estructura de tablas.
 
 \subsection{Poblado}
 
+Todos los \emph{scripts} mencionados a continuación se pueden encontrar en el subdirectorio \textbf{scripts/cargas/datawarehouse}
+
+Para poder relizar la integración de los datos se decidió utilizar tablas de equivalencia para las tablas Producto y Cliente de ambos sistemas de facturación.
+
+Se utilizó la siguiente estructura:
+
+\begin{itemize}
+    \item TECliente(cliente\_s\_v, cliente\_s\_n, cliente\_d\_w)
+    \item TEProducto(producto\_s\_v, producto\_s\_n, producto\_d\_w)
+\end{itemize}
+
+Para las tablas de categoría, región, provincia, ciudad, sucursal, medio de pago y tipo de cliente se utilizaron los mismos datos en ambos sistemas o se fabricaron datos para poner en el datawarehouse.
+
+Luego se implementaron los scripts para que, desde el datawarehouse, se realicen una consultas remotas a los sistemas nuevo y viejo, se realizara la equivalencia y se insertaran en las tablas de equivalencia. Detallado a continuacion. 
+
+\begin{lstlisting}[title=Inserción a la tabla de equivalencia de cliente]
+
+-- Conexión con el sistema de facturación viejo
+SELECT DBLINK_CONNECT(
+	'sistema_viejo',
+	'host=172.40.0.10 port=5432 password=admin user=admin dbname=facturacion'
+);
+
+-- Conexión con el sistema actual
+SELECT DBLINK_CONNECT(
+	'sistema_actual',
+	'host=172.40.0.20 port=5432 password=admin user=admin dbname=facturacion'
+);
+
+-- Inserta en la tabla de equivalencia de clientes
+-- teniendo en cuenta que pueden haber clientes con el mismo nombre,
+-- en cuyo caso los inserta en la misma fila
+
+INSERT INTO te_cliente (cliente_s_n, cliente_s_v)
+SELECT
+    consulta_actual.cod_cliente,
+    consulta_viejo.nro_cliente
+FROM
+    DBLINK('sistema_actual', 'SELECT cod_cliente, nombre FROM cliente')
+    AS consulta_actual(cod_cliente integer, nombre varchar(50))
+    FULL OUTER JOIN
+        DBLINK('sistema_viejo', 'select nro_cliente, nombre from cliente')
+        AS consulta_viejo(nro_cliente integer, nombre varchar(50))
+    ON consulta_viejo.nombre = consulta_actual.nombre;
+    
+\end{lstlisting}
+
+Para la inserción en la tabla de equivalencia de \textbf{productos} el procedimiento es similar, considerando el nombre de los productos.
+
+Los scripts se pueden encontrar en \textbf{te\_cliente.sql} y \textbf{te\_producto.sql}
+
+Se corren ambos scripts y ya tenemos a nuestra disposición las tablas de equivalencia para relizar el \textbf{ETL}.
+
+Con respecto al resto de las tablas, se utilizan los scripts homónimos a las tablas a poblar. Por ejemplo: \textbf{categoria.sql}, \textbf{region.sql}
 
 
 \subsubsection{\emph{ETL}}
