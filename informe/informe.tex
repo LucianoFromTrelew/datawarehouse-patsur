@@ -27,9 +27,9 @@ Para el siguiente trabajo de laboratorio se solicitaba implementar las bases de 
 
 \begin{displayquote}\itshape
 
-La cooperativa frutihorticola “PatSur” lleva operando 5 años en la región patagónica. Ha ido creciendo y abriendo sucursales en otras ciudades y participa en la provisión de mercaderías a fabricas, otras cooperativas, pymes, cadenas de supermercados. A medida que fue ampliando su ámbito de compra y venta ha ido modifcando sus sistemas para manejar nuevos datos como producciones, vendedores y compradores, lugares de compra y venta, transportes, empleados, etc. De allí que cada Gerente de área posea distintos datos en diferentes formas. Por lo tanto la primer idea es tener un información de las ventas. 
+La cooperativa frutihorticola “PatSur” lleva operando 5 años en la región patagónica. Ha ido creciendo y abriendo sucursales en otras ciudades y participa en la provisión de mercaderías a fabricas, otras cooperativas, pymes, cadenas de supermercados. A medida que fue ampliando su ámbito de compra y venta ha ido modifcando sus sistemas para manejar nuevos datos como producciones, vendedores y compradores, lugares de compra y venta, transportes, empleados, etc. De allí que cada Gerente de área posea distintos datos en diferentes formas. Por lo tanto la primer idea es tener información sobre las ventas. 
 
-La empresa cuenta con dos (2) sistemas distintos de facturación de productos (a partir del año 2010 se implementó un sistema desarrollado por una consultora, mientras que antes del 2010 se utilizaba un sistema desarrollado por el sobrino de uno de los socios de la cooperativa).  
+La empresa cuenta con dos (2) sistemas distintos de facturación de productos. A partir del año 2010 se implementó un sistema desarrollado por una consultora, mientras que antes del 2010 se utilizaba un sistema desarrollado por el sobrino de uno de los socios de la cooperativa.  
 
 \end{displayquote}
 
@@ -74,7 +74,7 @@ Los cuatro servicios creados por contenedores (un contenedor por servicio) se en
 
 \section{Bases de datos operacionales}
 
-Los sistemas de facturación de \dq{PatSur} presentan distintos modelados de datos, por lo cual la definición de las tablas de las bases de datos y su correspondiente cargado de datos serán procesos distintos.
+Los sistemas de facturación de \dq{PatSur} presentan distintos modelos de datos, por lo cual la definición de las tablas de las bases de datos y su correspondiente carga de datos serán procesos distintos.
 
 Todos los \emph{scipts} a los que se haga referencia se encontrarán en el directorio \textbf{\dq{scripts}}. Los \emph{scripts} correspondientes a la carga de datos tanto de los sistemas operacionales como del datawarehouse se encontrarán en el subdirectorio \textbf{\dq{scripts/cargas}}   
 
@@ -94,15 +94,17 @@ El primer sistema con el que dispuso la empresa tenía la siguiente estructura d
 
 El \emph{script} correspondiente para la definición de las tablas previamente definidas tiene el nombre \textbf{tablas\_sistema\_viejo.sql} 
 
-\subsubsection{Poblado}
+\subsubsection{Carga de datos}
 
 \emph{Los siguientes \emph{scripts} mencionados se encuentran en el subdirectorio \dq{scripts/cargas/sistema\_viejo} y en \dq{scripts/cargas/sistema\_viejo/sql}} 
 
 ~\\
 
-A través de \emph{scripts} escritos en Python (\textbf{productos.py} y \textbf{categorias.py}), se pudieron extraer datos de la \emph{API} de MercadoLibre \autocite{api} para disponer de datos con cierto grado de veracidad. Estos \emph{scripts} se encargan de consultar la fuente de datos, y de armar \emph{scripts} en SQL (\textbf{sql/productos} y \textbf{categorias.sql}) para la inserción en la tabla correspondiente (adecuando los datos acordemente al modelo de la base de datos)  
+A través de \emph{scripts} escritos en Python (\textbf{productos.py} y \textbf{categorias.py}), se pudieron extraer datos de la \emph{API} de MercadoLibre \autocite{api} para disponer de datos con cierto grado de veracidad. Estos \emph{scripts} se encargan de consultar la fuente de datos, y de armar \emph{scripts} en SQL (\textbf{sql/productos} y \textbf{sql/categorias.sql}) para la inserción en la tabla correspondiente (adecuando los datos acordemente al modelo de la base de datos)  
 
 MercadoLibre maneja un árbol de \textbf{categorías} muy amplio y con muchas ramas, de las cuales solamente se exploraron y utilizaron unas pocas para este trabajo. También se obtuvieron \textbf{productos} de dichas categorías
+
+\pagebreak
 
 \vspace*{5mm}
 \begin{lstlisting}[title=Cantidad de categorías y productos disponibles en el sistema de facturación viejo]
@@ -121,7 +123,7 @@ facturacion=# SELECT COUNT(*) FROM producto;
 
 Con respecto a los \textbf{clientes}, se utilizó un sitio generador de datos \autocite{data} para crear registros de clientes ficticios (\textbf{sql/clientes.sql}). 
 
-Por último, los archivos \textbf{sql/venta.sql} y \textbf{sql/detalle\_venta.sql} contienen las definiciones de las funciones \textbf{insertar\_venta(int)} e \textbf{insertar\_detalle\_venta(int)}. Ambas funciones reciben un valor entero como parámetro, que indica la cantidad de registros que se quieren crear (tomando valores aleatorios de la base). Estas funciones son acumulativas, entonces se pueden correr cuantas veces se desee para poblar las tablas de ventas y detalles de ventas.
+Por último, los archivos \textbf{sql/venta.sql} y \textbf{sql/detalle\_venta.sql} contienen las definiciones de las funciones \textbf{insertar\_venta(int)} e \textbf{insertar\_detalle\_venta(int)}. Ambas funciones reciben un valor entero como parámetro, que indica la cantidad de registros que se quieren crear (tomando valores aleatorios de la base). Estas funciones son acumulativas, entonces se pueden ejecutar cuantas veces se desee para poblar las tablas de ventas y detalles de ventas.
 
 \vspace*{5mm}
 \begin{lstlisting}[title=Inserción de 50 ventas aleatorias en la BD]
@@ -159,7 +161,7 @@ El sistema desarrollado en el 2010 por la consultora cuenta con el siguiente esq
 
 El \emph{script} correspondiente para la definición de las tablas previamente definidas tiene el nombre \textbf{tablas\_sistema\_actual.sql} 
 
-\subsubsection{Poblado}
+\subsubsection{Carga de datos}
 
 Los \emph{scripts} realizados para la carga de datos de este sistema son idénticos a los del sistema anterior, adaptándolos a los distintas representaciones de los datos. Para los \textbf{productos} y \textbf{categorías}, también se extrajeron datos de MercadoLibre, agregando como valor de \emph{subcategoría} un valor secuencial entre 1 y 5 por cada categoría (es decir, cada categoria tiene 5 subcategorías secuenciales)
 
@@ -233,12 +235,16 @@ Se utilizó la siguiente estructura de tablas.
     \item TipoCliente(\textbf{id\_tipo}, descripcion)
     \item Cliente(\textbf{id\_cliente}, \underline{id\_tipo}, nombre)
     \item Tiempo(\textbf{id\_tiempo}, anio, mes)
-    \item Venta(fecha, \underline{\textbf{id\_tiempo}}, \underline{\textbf{id\_factura}}, \underline{\textbf{id\_cliente}}, \underline{\textbf{id\_producto}}, \underline{\textbf{id\_sucursal}}, \underline{\textbf{id\_medio\_pago}}, monto\_vendido, cantidad\_vendida, descripcion)
+    \item Venta(fecha, \underline{\textbf{id\_tiempo}}, \underline{\textbf{id\_factura}}, \underline{\textbf{id\_cliente}}, \underline{\textbf{id\_producto}}, \underline{\textbf{id\_sucursal}}, 
+        
+        \underline{\textbf{id\_medio\_pago}}, monto\_vendido, cantidad\_vendida, descripcion)
 \end{itemize}
 
-\subsection{Poblado}
+\subsection{Carga de datos}
 
-Todos los \emph{scripts} mencionados a continuación se pueden encontrar en el subdirectorio \textbf{scripts/cargas/datawarehouse}
+\emph{Todos los \emph{scripts} mencionados a continuación se pueden encontrar en el subdirectorio \dq{scripts/cargas/datawarehouse}}
+
+~\\
 
 Para poder relizar la integración de los datos se decidió utilizar tablas de equivalencia para las tablas Producto y Cliente de ambos sistemas de facturación.
 
@@ -249,9 +255,11 @@ Se utilizó la siguiente estructura:
     \item TEProducto(producto\_s\_v, producto\_s\_n, producto\_d\_w)
 \end{itemize}
 
-Para las tablas de categoría, región, provincia, ciudad, sucursal, medio de pago y tipo de cliente se utilizaron los mismos datos en ambos sistemas o se fabricaron datos para poner en el datawarehouse.
+Para las tablas de categoría, región, provincia, ciudad, sucursal, medio de pago y tipo de cliente se utilizaron los mismos datos en ambos sistemas o se generaron datos para ingresar en el datawarehouse.
 
-Luego se implementaron los scripts para que, desde el datawarehouse, se realicen una consultas remotas a los sistemas nuevo y viejo, se realizara la equivalencia y se insertaran en las tablas de equivalencia. Detallado a continuacion. 
+Luego se implementaron \emph{scripts} para que, desde el datawarehouse, se realicen consultas remotas a los sistemas actual y viejo; se realizará la equivalencia y se insertarán en las tablas de equivalencia, detallado a continuacion. 
+
+\pagebreak
 
 \begin{lstlisting}[title=Inserción a la tabla de equivalencia de cliente]
 
@@ -289,16 +297,18 @@ Para la inserción en la tabla de equivalencia de \textbf{productos} el procedim
 
 Los scripts se pueden encontrar en \textbf{te\_cliente.sql} y \textbf{te\_producto.sql}
 
-Se corren ambos scripts y ya tenemos a nuestra disposición las tablas de equivalencia para relizar el \textbf{ETL}.
+Se corren ambos \emph{scripts} y ya se dispone de las tablas de equivalencia para relizar el \textbf{ETL}.
 
 Con respecto al resto de las tablas, se utilizan los scripts homónimos a las tablas a poblar. Por ejemplo: \textbf{categoria.sql}, \textbf{region.sql}
 
 
 \subsubsection{\emph{ETL}}
 
-Para el etl se crea una tabla temporal en la cual albergar las ventas para un mes y año determinados, y desde aquí realizar las inserciones a las tablasd de Cliente, Producto, Venta y Tiempo. Este procedimiento realizado a través de una función a la cual se le pasa el mes y año a insertar en el \emph{Datawarehouse}
+Para el \emph{ETL} (\emph{Extraction, Transformation, Load}, \emph{Extracción, Transformación, Carga}) se crea una tabla temporal para albergar las ventas de un año y mes determinados. Acto seguido se realizan las inserciones a las tablas de Cliente, Producto, Venta, y Tiempo. Este procedimiento es realizado a través de una función a la cual se le pasa el mes y año a insertar en el datawarehouse.
 
 La creación de la tabla temporal, dentro de la función se realiza de la siguiente manera:
+
+\pagebreak
 
 \begin{lstlisting}[title=Creación de la Tabla Temporal]
 -- Conexión con el sitio del cual conseguir los datos
@@ -308,61 +318,62 @@ PERFORM DBLINK_CONNECT(
 );
 
 -- Creación tabla tempora
-create table tmp_ventas as
-select
-* 
-from 
-dblink(
-    'sistema_actual', 
-    'select
-    fecha_venta,
-    v.id_factura,
-    v.cod_cliente,
-    dv.cod_producto,
-    cod_medio_pago,
-    unidad * precio as monto_vendido,
-    unidad as cantidad_vendida,
-    p.nombre as nombre_producto,
-    p.cod_categoria,
-    p.cod_subcategoria,
-    precio,
-    c.nombre as nombre_cliente,
-    c.cod_tipo
-    from venta v, cliente c, detalle_venta dv, producto p
-    where 
-    v.id_factura = dv.id_factura
-    and v.cod_cliente = c.cod_cliente
-    and dv.cod_producto = p.cod_producto 
-    and date_part ( ''month'',   fecha_venta) =  '|| $2 ||'
-            and date_part (''year'',  fecha_venta) = ' || $1 ||'
-    order by 1'
-) as st(
-    fecha_venta date,
-    id_factura integer,
-    cod_cliente integer,
-    cod_producto integer,
-    cod_medio_pago integer,
-    monto_vendido real,
-    cantidad_vendida integer,
-    nombre_producto varchar(100),
-    cod_categoria integer,
-    cod_subcategoria integer,
-    precio real,
-    nombre_cliente varchar(100),
-    cod_tipo integer
-);
+CREATE TABLE tmp_ventas AS
+    SELECT
+    * 
+    FROM 
+    DBLINK(
+        'sistema_actual', 
+        'SELECT
+        fecha_venta,
+        v.id_factura,
+        v.cod_cliente,
+        dv.cod_producto,
+        cod_medio_pago,
+        unidad * precio AS monto_vendido,
+        unidad AS cantidad_vendida,
+        p.nombre AS nombre_producto,
+        p.cod_categoria,
+        p.cod_subcategoria,
+        precio,
+        c.nombre AS nombre_cliente,
+        c.cod_tipo
+        FROM venta v, cliente c, detalle_venta dv, producto p
+        WHERE 
+        v.id_factura = dv.id_factura
+        AND v.cod_cliente = c.cod_cliente
+        AND dv.cod_producto = p.cod_producto 
+        AND DATE_PART(''month'', fecha_venta) =  '|| $2 ||'
+                AND DATE_PART(''year'', fecha_venta) = '|| $1 ||'
+        ORDER BY 1'
+    ) AS st(
+        fecha_venta date,
+        id_factura integer,
+        cod_cliente integer,
+        cod_producto integer,
+        cod_medio_pago integer,
+        monto_vendido real,
+        cantidad_vendida integer,
+        nombre_producto varchar(100),
+        cod_categoria integer,
+        cod_subcategoria integer,
+        precio real,
+        nombre_cliente varchar(100),
+        cod_tipo integer
+    );
 \end{lstlisting}
 
-La selección y de datos y el armado de la tabla temporal considera la estructura del sitio del cual extrae los datos, lo cual hace que los campos que selecciona no sean los mismos cuando se extrae del sistema nuevo que cuando se extrae del sistema nuevo. Luego se realizan las inserciones a Producto, Cliente y Venta desde la tabla temporal. Una vez realizada la inserción, se realiza un drop de la tabla.
+La selección de datos y el armado de la tabla temporal considera la estructura del sitio del cual se extraen los datos, lo cual hace que los campos que selecciona no sean los mismos cuando se extrae del sistema viejo que cuando se extrae del sistema actual. 
 
+Una vez cargada la tabla temporal, se realizan las inserciones a Producto, Cliente y Venta, para luego eliminarla (\emph{DROP TABLE}).
 
-\emph{Ambos manejos ETL están en los \emph{scripts} \textbf{poblar\_dw\_sistema\_viejo.sql} \newline y \textbf{poblar\_dw\_sistema\_nuevo.sql}.}
+\emph{Ambas funciones ETL están en los \emph{scripts} \textbf{poblar\_dw\_sistema\_viejo.sql} \newline y \textbf{poblar\_dw\_sistema\_nuevo.sql}.}
 
-Para facilitar la utilización del \emph{Datawarehouse} por parte de la Herramienta de BI se generaron vistas que reduzcan el esquema de Copo de Nieve planteado a uno de Estrella. Esta definción se encuentra en el archivo \textbf{src/vistas\_datawarehouse.sql}
+Para facilitar la implementación de la herramienta de BI, se generaron vistas que reduzcan el esquema de Copo de Nieve planteado en el datawarehouse a uno de Estrella. Estas definciones se encuentran en el archivo \textbf{vistas\_datawarehouse.sql}
 
 \subsection{Explotación}
 
-Teniendo el datawarhouse creado y con datos cargados a partir de las bases de datos operacionales (luego de convertirlos con los procesos de ETL definidos), se le puede realizar distintas consultas que provean soporte para la toma de decisiones de \dq{PatSur}
+Teniendo el datawarhouse creado y con datos cargados a partir de las bases de datos operacionales (luego de convertirlos con los procesos de ETL definidos), se pueden realizar distintas consultas que provean soporte para la toma de decisiones de \dq{PatSur}
 
 \subsection{Distintas perspectivas de las ventas}
 
@@ -409,7 +420,7 @@ GROUP BY cli.id_cliente;
 
 \section{Herramienta de \emph{BI}: \emph{Pentaho}}
 
-\emph{Pentaho BI Suite} es un conjunto de programas para el soporte de la toma de decisiones y \emph{Business Intelligence} \autocite{wikipedia-pentaho} de la empresa Hitachi. 
+\emph{Pentaho BI Suite} es un conjunto de programas para el soporte de la toma de decisiones y \emph{Business Intelligence} \autocite{wikipedia-pentaho} de la empresa Hitachi. Todas las herramientas de la suite corren sobre la \emph{JVM} (por lo tanto es necesario contar con Java instalado).
 
 Para este trabajo de laboratorio se utilizaron las herramientas \underline{\href{https://mondrian.pentaho.com/documentation/workbench.php}{\emph{Schema Workbench}}} y \underline{\href{https://help.pentaho.com/Documentation/7.1/Installation}{\emph{BI Server}}} (este último se implementó mediante contenedores de \docker{}, con las configuraciones descriptas en la sección 1)
 
@@ -457,7 +468,7 @@ Una vez instalado el driver correspondiente para el motor y con el datawarehouse
         \end{itemize}
         \item Hacer click en \texttt{OK}
     \end{enumerate}
-    \item Crear un nuevo esquema
+     \item Crear un nuevo esquema
     \begin{enumerate}
         \item Hacer click en \texttt{File}
         \item Seleccionar \texttt{New}
@@ -503,7 +514,7 @@ Una vez instalado el driver correspondiente para el motor y con el datawarehouse
     \end{enumerate}
 \end{enumerate}
 
-Una vez publicado el esquema en el servidor, navegar a la dirección \emph{localhost:7070} e ingresar las credenciales previamente descriptas (Username: admin, Password: password). 
+Una vez publicado el esquema en el servidor, navegar a la dirección \emph{localhost:7070} e ingresar las credenciales previamente descriptas (\emph{Username}: admin, \emph{Password}: password). 
 
 Antes de visualizar el cubo, se debe crear la conexión con el datawarehouse. Para ello, seguir los siguientes pasos:
 
