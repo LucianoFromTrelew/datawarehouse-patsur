@@ -19,241 +19,515 @@
 \tableofcontents
 \clearpage 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% ABSTRACT
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%\begin{abstract}
-%Your abstract.
-%\end{abstract}
-
 \lstset{style=sql}
 
+\section{Introducción}
 
-\section{Alta Disponibilidad, Balanceo de Carga, y Réplica}
-\emph{Estudie las formas de implementar Alta Disponibilidad, Balanceo de carga y replicación en postgres (capitulo 26 de la ayuda), escriba un resumen y un cuadro explicativo de cada alternativa planteada en la documentación, detallando el software que se debe utilizar para implementarlo.} 
+Para el siguiente trabajo de laboratorio se solicitaba implementar las bases de datos operacionales y un datawarehouse que satisfaga las necesidades de la empresa \dq{PatSur}. Los requerimientos son los siguientes:
 
-~\\
+\begin{displayquote}\itshape
 
-El motor de bases de datos \emph{PostgreSQL} detalla en su documentación distintas formas posibles de implementar los conceptos de \textbf{Alta disponibilidad}, \textbf{Balanceo de carga}, y \textbf{Replicación}. Antes de detallar brevemente cada uno, se definen los conceptos de
+La cooperativa frutihorticola “PatSur” lleva operando 5 años en la región patagónica. Ha ido creciendo y abriendo sucursales en otras ciudades y participa en la provisión de mercaderías a fabricas, otras cooperativas, pymes, cadenas de supermercados. A medida que fue ampliando su ámbito de compra y venta ha ido modifcando sus sistemas para manejar nuevos datos como producciones, vendedores y compradores, lugares de compra y venta, transportes, empleados, etc. De allí que cada Gerente de área posea distintos datos en diferentes formas. Por lo tanto la primer idea es tener información sobre las ventas. 
+
+La empresa cuenta con dos (2) sistemas distintos de facturación de productos. A partir del año 2010 se implementó un sistema desarrollado por una consultora, mientras que antes del 2010 se utilizaba un sistema desarrollado por el sobrino de uno de los socios de la cooperativa.  
+
+\end{displayquote}
+
+Las implementaciones de todos los sistemas necesarios fueron hechas con contenedores de \docker{} y orquestrados con \doccom{}; se deja a disposición con el presente informe y todos los \emph{scripts} utilizados el archivo de configuración para levantar todos los contenedores necesarios. 
+
+Los cuatro servicios creados por contenedores (un contenedor por servicio) se encuentran dentro de la red \textbf{172.40.0.0/16}, cada uno con las siguientes características:
 \begin{itemize}
-    \item \textbf{Alta disponibilidad}: propiedad de las \emph{Bases de Datos Distribuidas} (\emph{BDD}) que permite tener acceso a una relación \emph{r} cuando uno de los sitios que contenga dicha relación falle \autocite{silberschatz}. También se puede definir como la probabilidad de que el sistema esté accesible durante un periodo de tiempo \autocite{elmasri}.
-    \item \textbf{Balanceo de carga}: propiedad que permite que varios servidores provean los mismos datos \autocite{high-availability}
-    \item \textbf{Replicación}: mantener copias idénticas de la relación almacenadas en distintos sitios que conforman la \emph{BDD} \autocite{silberschatz} 
+    \item Sistema de facturación viejo:
+        \begin{itemize}
+            \item Imagen: \underline{\href{https://hub.docker.com/_/postgres/}{PostgreSQL 9.6}}
+            \item Dirección IP: 172.40.0.10
+            \item Puerto de escucha: 5432
+            \item Nombre de la base de datos: facturacion
+            \item Usuario: admin
+            \item Contraseña: admin
+        \end{itemize}
+    \item Sistema de facturación actual
+        \begin{itemize}
+            \item Imagen: \underline{\href{https://hub.docker.com/_/postgres/}{PostgreSQL 9.6}}
+            \item Dirección IP: 172.40.0.20
+            \item Puerto de escucha: 5432
+            \item Nombre de la base de datos: facturacion
+            \item Usuario: admin
+            \item Contraseña: admin
+        \end{itemize}
+    \item Datawarehouse:
+        \begin{itemize}
+            \item Imagen: \underline{\href{https://hub.docker.com/_/postgres/}{PostgreSQL 9.6}}
+            \item Dirección IP: 172.40.0.30
+            \item Puerto de escucha: 5432
+            \item Nombre de la base de datos: datawarehouse
+            \item Usuario: admin
+            \item Contraseña: admin
+        \end{itemize}
+    \item Pentaho \emph{BI Server} :
+        \begin{itemize}
+            \item Imagen: \underline{\href{https://hub.docker.com/r/wmarinho/pentaho/}{Pentaho BI Server}}
+            \item Dirección IP: 172.40.0.40
+            \item Puerto de escucha: 7070
+        \end{itemize}
 \end{itemize}
 
-Hace falta agregar que en la gran mayoría de las soluciones propuestas por el motor se habla de una arquitectura de \emph{BDD} de tipo \emph{maestro-esclavo}, donde existe un único servidor que es el que escribe en la base de datos (maestro ó primario), y otros que solamente llevan registro de los cambios (esclavos o \emph{en espera}); se subdividen los servidores esclavos en \dq{servidores tibios} (\emph{warm}) y \dq{servidores calientes} (\emph{hot}). A los primeros solamente se puede conectar cuando se cae el servidor principal, y toman su puesto, mientras que a los segundos siempre se puede conectar, para realizar consultas de solo lectura.
+\section{Bases de datos operacionales}
 
-Las distintas soluciones que presenta \emph{Postgres} en su documentación son las siguientes:
-\begin{enumerate}
-    \item Tolerancia a fallos por disco compartido (\emph{Shared Disk Failover}): se mantiene una única copia de la base de datos que es accedida por múltiples servidores. Si el servidor principal falla, el servidor esclavo puede realizar una recuperación como si se tratase de una caída del sistema.
+Los sistemas de facturación de \dq{PatSur} presentan distintos modelos de datos, por lo cual la definición de las tablas de las bases de datos y su correspondiente carga de datos serán procesos distintos.
 
-    \item Replicación del sistema de archivos (\emph{File System Replication}): todos los cambios realizados al sistema de archivos de la base de datos son duplicados en otro sistema de archivos ubicado en otra máquina. La copia debe garantizar la consistencia de los datos entre ambas versiones.
+Todos los \emph{scipts} a los que se haga referencia se encontrarán en el directorio \textbf{\dq{scripts}}. Los \emph{scripts} correspondientes a la carga de datos tanto de los sistemas operacionales como del datawarehouse se encontrarán en el subdirectorio \textbf{\dq{scripts/cargas}}   
 
-    \item Envío de la bitácora de transacciones (\emph{Transaction Log Shipping}): los servidores esclavos se pueden mantener actualizados enviándoles registros de la bitácora de lectura adelantada. Si el servidor principal se cae, los esclavos pueden tomar su puesto rápidamente ya que tienen casi toda la información.
+\subsection{Sistema viejo}
 
-    \item Replicación \emph{maestro-esclavo} basado en \emph{triggers} (\emph{Trigger-Based Master-Standby Replication}): las consultas de modificación son enviadas al servidor maestro, para que este asíncronamente envíe los cambios a los esclavos (que solamente pueden realizar consultas de lectura). Este tipo de replicación se puede implementar con el módulo \textbf{Slony-I}. 
+\subsubsection{Definición}
 
-    \item \emph{Middleware} de replicación basado en sentencias (\emph{Statement-Based Replication Middleware}): se intercepta cada sentencia SQL y se la envía a cada uno de los servidores que componen la \emph{BDD} (cada uno opera independientemente). Las cosultas de escritura son enviadas a todos los servidores, así se mantienen actualizados, mientras que las de lecturas pueden ser enviadas a uno solo (se balancea el trabajo de lectura). Se puede implementar con \textbf{Pgpool-II} y con \textbf{Continuent Tungsten}  
+El primer sistema con el que dispuso la empresa tenía la siguiente estructura de tablas:
 
-    \item Replicación asíncrona de múltiples maestros (\emph{Asynchronous Multimaster Replication}): cada servidor trabaja independientemente del resto, y periódicamente se comunican entre sí para identificar transacciones que entran en conflicto. Estos conflictos pueden ser resueltos por el usuario o establecer de antemano ciertas reglas de resolución. Puede ser implementado con el módulo \textbf{Bucardo} 
-
-    \item Replicación síncrona de múltiples maestros (\emph{Synchronous Multimaster Replication}): cualquier servidor puede aceptar consultas de escritura, y los cambios son transmitidos desde el servidor que realizó la actulización hacia el resto \emph{antes de que finalice la transacción}. Consultas de lectura pueden ser ejecutadas por cualquier servidor. El motor no provee este tipo de replicación, pero puede ser implementado mediante el \emph{protocolo de compromiso en dos fases}.
-\end{enumerate}
-
-\begin{center}
-    \begin{tabular}{| p{5cm} | c | p{5cm} | p{4cm} |}
-        \hline
-        \textbf{Solución} & ¿Asíncrono? & Cuello de botella & Software adicional \\ \hline
-        \textbf{Tolerancia a fallos por disco compartido} & \xmark & Fallos del disco & -\\ \hline
-        \textbf{Replicación del sistema de archivos} & \xmark & Integridad de la copia & -\\ \hline
-        \textbf{Envío de la bitácora de transacciones} & Ambas & Velocidad de la red &\\ \hline
-        \textbf{Replicación \emph{maestro-esclavo} basado en \emph{triggers}} & \cmark & Velocidad de la red & Slony-I\\ \hline
-        \textbf{\emph{Middleware} de replicación basado en sentencias} & \cmark & Sincronización entre servidores & Pgpool-II, Continuent Tungsten\\ \hline
-        \textbf{Replicación asíncrona de múltiples maestros} & \cmark & Sincronización entre servidores y resolución de conflictos & Bucardo\\ \hline
-        \textbf{Replicación síncrona de múltiples maestros} & \xmark & Sincronización entre servidores & -\\ \hline
-    \end{tabular}
-\end{center}
-
-\subsection{Replicación en \emph{PostgreSQL}: \emph{Slony-I}}
-\textbf{Slony-I} es un módulo para \emph{PostgreSQL} que implementa \emph{un sistema de replicación \dq{maestro con múltiples esclavos}} \autocite{slony}. Soporta \textbf{réplica en cascada} (un nodo sirve a otro nodo), y es tolerante a fallos. 
-
-Algunos conceptos que maneja el módulo son:
 \begin{itemize}
-    \item \textbf{Cluster}: conjunto de instancias de bases de datos involucradas en la replicación.
-    \item \textbf{Nodo}: integrantes del cluster.
-    \item \textbf{Conjunto de réplica}: conjunto de objetos de la base de datos a ser replicados; pueden haber varios en un cluster.
-    \item \textbf{Origen}: nodo principal (maestro); es el único en el que se puede escribir.
-    \item \textbf{Suscriptores}: nodos esclavos; reciben datos de la réplica.
-    \item \textbf{Proveedor}: nodo esclavo que provee de datos a los otros nodos esclavos (actúa como un nodo maestro pero no se permite ninguna escritura en él).
+    \item Cliente(\textbf{nro\_cliente}, nombre, tipo, direccion)
+    \item Categoria(\textbf{nro\_categ}, descripcion)
+    \item Venta(\textbf{nro\_factura}, fecha\_venta, \underline{nro\_cliente}, nombre, forma\_pago)
+    \item Detalle\_Venta(\underline{\textbf{nro\_factura}}, \underline{\textbf{nro\_producto}}, descripcion, unidad, precio)
+    \item Producto(\textbf{nro\_producto}, nombre, \underline{nro\_categ}, precio\_actual)
 \end{itemize}
 
-La versión 9.0 de \emph{PostgreSQL} incorpora \emph{replicación por flujos}, sin embargo hay ciertos casos de uso donde se necesitaría una herramiento como \emph{Slony-I} ya que las técnicas nativas del motor no alcanzan \autocite{infoslony}:
-\begin{enumerate}
-    \item Interactuar con distintas versiones de \emph{Postgres}: \emph{Slony-I} soporta esta interacción, mientras que la replicación propia del DBMS no.
-    \item Replicación parcial: la replicación basada en \emph{logs de escritura adelantada} replica todo. 
-    \item Implementar comportamiento adicional en los esclavos.
-\end{enumerate}
-
-
-\section{Fragmentos de la base \emph{aviones}}
-\emph{Sobre la base de datos de aviones, crear fragmentos para los pilotos de Trelew, pilotos de Madryn, y todos los pilotos. Hacer esquema de fragmentación y de asignación} 
-
-~\\
-
-La definición de cada fragmento se puede encontrar en los archivos \textbf{\emph{pilotos\_de\_madryn.sql}}, \textbf{\emph{pilotos\_de\_trelew.sql}}, y \textbf{\emph{todos\_pilotos.sql}} dentro del directorio \emph{fragmentos\_aviones}. Cada consulta incluye una descripción y nombre de fragmento.
-
-\begin{center}
-    \begin{table}[H]
-        \begin{tabular}{| p{5cm} | c | p{5cm} | p{4cm} |}
-            \hline
-            Sitio Trelew & Sitio Madryn & Sitio Todos\\ \hline
-            \textbf{\emph{localidad\_trelew}} & \textbf{\emph{localidad\_madryn}} & \textbf{\emph{localidad\_todos}}\\ \hline
-            \textbf{\emph{piloto\_trelew}} & \textbf{\emph{piloto\_madryn}} & \textbf{\emph{piloto\_todos}}\\ \hline
-            \textbf{\emph{trabajador\_trelew}} & \textbf{\emph{trabajador\_madryn}} & \textbf{\emph{trabajador\_todos}}\\ \hline
-            \textbf{\emph{piloto\_avion\_trelew}} & \textbf{\emph{piloto\_avion\_madryn}} & \textbf{\emph{piloto\_avion\_todos}}\\ \hline
-            \textbf{\emph{avion\_trelew}} & \textbf{\emph{avion\_madryn}} & \textbf{\emph{avion\_todos}}\\ \hline
-            \textbf{\emph{modelo\_avion\_trelew}} & \textbf{\emph{modelo\_avion\_madryn}} & \textbf{\emph{modelo\_avion\_todos}}\\ \hline
-        \end{tabular}
-    \caption{\label{tab:table-name}Esquema de asignación}
-    \end{table}
-\end{center}
-
-
-\section{Bases de Datos Distribuidas con \emph{dblink}}
-
-\subsection{Introducción}
-El módulo \emph{dblink} permite hacer conexiones a otras bases de de datos \emph{PostgreSQL} desde la sesión actual \autocite{dblink-intro}. Para utilizarlo hace falta crear la extensión en la base de datos en la que se lo vaya a usar
-
-\vspace*{5mm}
-\begin{lstlisting}
-universidad=# CREATE EXTENSION dblink;
-CREATE EXTENSION
-\end{lstlisting}
-
-A continuación se explicarán brevemente las primitivas de \emph{dblink} que se utilizarán posteriormente en este laboratorio
-\begin{itemize}
-    \item \emph{dblink\_connect}: establecer una conexión con otra base de datos; la conexión puede ser nombrada o no. Mínimamente se necesita pasar como parámetro el nombre de la base de datos a la que se intenta conectar, si es que está en el mismo servidor. Caso contrario, se le debe indicar la dirección IP del servidor, puerto de escucha, y credenciales (usuario y contraseña).
-    \item \emph{dblink\_disconnect}: cierra una conexión (nombrada) con otra base de datos. 
-    \item \emph{dblink}: ejecuta una consulta en una base de datos remota. Se le debe pasar como parámetros la conexión (ya sea el nombre, o toda la cadena de conexión), y la consulta que se quiera realizar. También se debe definir el formato de la tabla que devolverá la consulta 
-    \vspace*{5mm}
-    \begin{lstlisting}[title=Consulta remota al sitio de cursos]
-    universidad=# SELECT * FROM dblink('conn_cursos', 'SELECT nombre FROM cursos') AS t(nombre varchar(50));
-    \end{lstlisting}
-
-    \item \emph{dblink\_exec}: ejecuta una consulta remota pero no devuelve resultados. Al igual que la primitiva anterior, se le debe pasar la conexión y la consulta. 
-\end{itemize}
-
-\subsection{Implementación}
-\emph{Con el módulo dbLink de Postgres establecer una conexión entre dos servidores posibles; en el servidor local crear las tablas \dq{alumnos} e \dq{inscriptos}, en el remoto crear la tabla \dq{cursos}} 
-
-~\\
-
-Para la implementación de la base de datos distribuidas, se optó por crear dos \emph{servicios} mediante contenedores de \docker{}. Cada uno corre una servidor de \emph{PostgreSQL 9.6} con un usuario con privilegios de superusuario. La definición y el manejo de estos servicios se llevó a cabo utilizando \doccom{} \footnote{Para ver cómo están definidos, referirse al archivo \emph{docker-compose.yml} y al archivo \emph{README.md}}.
-
-El servicio nombrado \dq{sitio-alumnos} hará de servidor local, mientras que \dq{sitio-cursos} será el remoto.
-
-Cada servicio se crea con los siguientes parámetros:
-\begin{itemize}
-    \item Usuario: \emph{admin} 
-    \item Contraseña: \emph{admin} 
-    \item Nombre de la base de datos: \emph{universidad} 
-\end{itemize}
-
-\subsubsection{Creación de las tablas}
-
-Para crear las tablas en el servidor local y el remoto, se ejecutó el siguiente script en el sitio de alumnos
-
-\clearpage
-\begin{lstlisting}[title=Definición de las tablas (el script SQL es \emph{crear\_tablas\_locales\_remotas.sql})]
-CREATE TABLE alumnos (
-    dni integer PRIMARY KEY,
-    nombre varchar(50)
-);
-
--- Conectar al servidor 172.20.0.20 (servidor remoto, sitio con los cursos) con las credenciales admin:admin
-SELECT dblink_connect('conn_cursos', 'hostaddr=172.20.0.20 dbname=universidad user=admin password=admin');
-
--- Utilizar la conexión creada anteriormente para ejecutar una consulta remota
-SELECT dblink_exec('conn_cursos', 'CREATE TABLE cursos (id_curso integer PRIMARY KEY, nombre varchar(50), id_profesor integer, departamento integer)');
-
-CREATE TABLE inscriptos (
-    dni_alumno integer REFERENCES alumnos (dni),
-    id_curso integer,
-    anio integer,
-    nota integer,
-    PRIMARY KEY (dni_alumno, id_curso, anio)
-);
-
--- Cerrar la conexión con la BD remota
-SELECT dblink_disconnect('conn_cursos');
-\end{lstlisting}
+El \emph{script} correspondiente para la definición de las tablas previamente definidas tiene el nombre \textbf{tablas\_sistema\_viejo.sql} 
 
 \subsubsection{Carga de datos}
 
-Los scripts generados para la carga de datos fueron creados utilizando el sitio \autocite{data}. Debido la extensión de los scripts no se mostrarán en este informe, pero están disponibles en el directorio \emph{cargas/}, cada uno con un nombre representativo según su tabla.
+\emph{Los siguientes \emph{scripts} mencionados se encuentran en el subdirectorio \dq{scripts/cargas/sistema\_viejo} y en \dq{scripts/cargas/sistema\_viejo/sql}} 
 
-Para la tabla \emph{inscriptos}, se cargaron datos que pueden existir en la tabla \emph{cursos}, y otros que no (según se pedía en el enunciado).  
+~\\
 
-\subsection{Consultas}
+A través de \emph{scripts} escritos en Python (\textbf{productos.py} y \textbf{categorias.py}), se pudieron extraer datos de la \emph{API} de MercadoLibre \autocite{api} para disponer de datos con cierto grado de veracidad. Estos \emph{scripts} se encargan de consultar la fuente de datos, y de armar \emph{scripts} en SQL (\textbf{sql/productos} y \textbf{sql/categorias.sql}) para la inserción en la tabla correspondiente (adecuando los datos acordemente al modelo de la base de datos)  
 
-Ya poblada las tablas que componen la base de datos distribuidas, se pueden ejecutar consultas con datos locales y datos remotos utilizando el módulo \emph{dblink}. 
+MercadoLibre maneja un árbol de \textbf{categorías} muy amplio y con muchas ramas, de las cuales solamente se exploraron y utilizaron unas pocas para este trabajo. También se obtuvieron \textbf{productos} de dichas categorías
 
-\subsubsection{Cursos con inscriptos}
-
-
-\vspace*{5mm}
-\begin{lstlisting}[title=Cursos con algún inscripto (el script es \emph{cursos\_con\_inscriptos.sql})]
-SELECT dblink_connect('conn_cursos', 'hostaddr=172.20.0.20 user=admin password=admin dbname=universidad');
-
-SELECT 
-    distinct nombre 
-FROM 
-    dblink('conn_cursos', 'SELECT id_curso, nombre FROM cursos') 
-    AS t(id_curso integer, nombre text)
-JOIN inscriptos AS ins 
-    ON t.id_curso=ins.id_curso;
-
-SELECT dblink_disconnect('conn_cursos');
-\end{lstlisting}
-
-En la consulta anterior, se muestran una única vez los nombres de los cursos (desde el servidor remoto) que tengan al menos un inscripto registrado (en e servidor local).
-
-
-\subsubsection{Alumnos recursantes}
+\pagebreak
 
 \vspace*{5mm}
-\begin{lstlisting}[title=Alumnos que cursaron más de una vez una materia (el script es \emph{recursantes.sql})]
--- Alumnos recursantes
+\begin{lstlisting}[title=Cantidad de categorías y productos disponibles en el sistema de facturación viejo]
+facturacion=# SELECT COUNT(*) FROM categoria;
+ count 
+-------
+    30
+(1 row)
 
-SELECT dblink_connect('conn_cursos', 'hostaddr=172.20.0.20 user=admin password=admin dbname=universidad');
-
-SELECT 
-    al.nombre AS "Alumno",
-    ins.dni_alumno AS "DNI", 
-    cur.nombre AS "Curso",
-    COUNT(ins.id_curso) AS "Cuántas veces" 
-FROM inscriptos AS ins
-JOIN alumnos AS al
-    ON ins.dni_alumno = al.dni
-JOIN (SELECT * FROM dblink('conn_cursos', 'SELECT id_curso, nombre FROM cursos') AS t(id_curso integer, nombre text)) AS cur
-    ON ins.id_curso=cur.id_curso
-GROUP BY 
-    al.nombre,
-    ins.dni_alumno,
-    cur.nombre
-HAVING COUNT(ins.id_curso) > 1 
-ORDER BY al.nombre;
-
-SELECT dblink_disconnect('conn_cursos');
+facturacion=# SELECT COUNT(*) FROM producto;
+ count 
+-------
+  1450
+(1 row)
 \end{lstlisting}
 
-Los alumnos recursantes estarán registrados varias veces con un mismo curso en la tabla local \emph{inscriptos}. 
+Con respecto a los \textbf{clientes}, se utilizó un sitio generador de datos \autocite{data} para crear registros de clientes ficticios (\textbf{sql/clientes.sql}). 
 
-\subsubsection{Verificar la existencia de los cursos en la tabla \emph{inscriptos}}
+Por último, los archivos \textbf{sql/venta.sql} y \textbf{sql/detalle\_venta.sql} contienen las definiciones de las funciones \textbf{insertar\_venta(int)} e \textbf{insertar\_detalle\_venta(int)}. Ambas funciones reciben un valor entero como parámetro, que indica la cantidad de registros que se quieren crear (tomando valores aleatorios de la base). Estas funciones son acumulativas, entonces se pueden ejecutar cuantas veces se desee para poblar las tablas de ventas y detalles de ventas.
 
-Para recorrer la tabla de inscripciones y verificar si cada curso registrado existe en la tabla remota \emph{cursos}, se creó una función \emph{verificar\_curso\_inscripto()} que itera sobre la tabla (valiéndose de la posibilidad que provee \emph{Pl/PgSQL} para iterar sobre el resultado de una consulta en un ciclo \emph{FOR}) y consulta en la tabla remota si existe ese curso. Debido a la extensión de la función, no se presentará en este informe, pero se la puede encontrar en el archivo \textbf{\emph{verificar\_curso\_inscripto.sql}}
+\vspace*{5mm}
+\begin{lstlisting}[title=Inserción de 50 ventas aleatorias en la BD]
+facturacion=# SELECT insertar_ventas(50);
+NOTICE:  [1/50] INSERTANDO VENTA (2007-10-03, 862512, 4118, Linda Acosta, EFECTIVO)
+NOTICE:  [2/50] INSERTANDO VENTA (2002-07-29, 143370, 3458, Jeremy Pacheco, CREDITO)
+NOTICE:  [3/50] INSERTANDO VENTA (2006-02-15, 993978, 2414, Lisandra Bernard, DEBITO)
+...
+\end{lstlisting}
+
+\vspace*{5mm}
+\begin{lstlisting}[title=Inserción de 300 detalles de ventas aleatorias en la BD]
+facturacion=# SELECT insertar_detalle_venta(300);
+NOTICE:  [1/300] INSERTANDO DETALLE (333538, 639930615, 19, 169.99)
+NOTICE:  [2/300] INSERTANDO DETALLE (743695, 644739590, 41, 72)
+NOTICE:  [3/300] INSERTANDO DETALLE (124334, 712205536, 54, 419500)
+...
+\end{lstlisting}
+
+\subsection{Sistema actual}
+
+\subsubsection{Definición}
+
+El sistema desarrollado en el 2010 por la consultora cuenta con el siguiente esquema:
+
+\begin{itemize}
+    \item Cliente(\textbf{cod\_cliente}, nombre, \underline{cod\_tipo}, direccion)
+    \item Tipo\_Cliente(\textbf{cod\_tipo}, descripcion)
+    \item Producto(\textbf{cod\_producto}, nombre, \underline{cod\_categoria}, \underline{cod\_subcategoria}, precio\_actual)
+    \item Categoria(\textbf{cod\_categoria}, \textbf{cod\_subcategoria}, descripcion)
+    \item Venta(\textbf{id\_factura}, fecha\_venta, \underline{cod\_cliente}, nombre, \underline{cod\_medio\_pago})
+    \item Detalle\_Venta(\underline{\textbf{id\_factura}}, \underline{\textbf{cod\_producto}}, descripcion, unidad, precio)
+    \item Medio\_Pago(\textbf{cod\_medio\_pago}, descripcion, valor, unidad, tipo\_operacion)
+\end{itemize}
+
+El \emph{script} correspondiente para la definición de las tablas previamente definidas tiene el nombre \textbf{tablas\_sistema\_actual.sql} 
+
+\subsubsection{Carga de datos}
+
+Los \emph{scripts} realizados para la carga de datos de este sistema son idénticos a los del sistema anterior, adaptándolos a los distintas representaciones de los datos. Para los \textbf{productos} y \textbf{categorías}, también se extrajeron datos de MercadoLibre, agregando como valor de \emph{subcategoría} un valor secuencial entre 1 y 5 por cada categoría (es decir, cada categoria tiene 5 subcategorías secuenciales)
+
+\vspace*{5mm}
+\begin{lstlisting}[title=Cantidad de categorías y productos disponibles en el sistema de facturación actual]
+facturacion=# SELECT COUNT(*) FROM categoria;
+ count 
+-------
+   150
+(1 row)
+
+facturacion=# SELECT COUNT(*) FROM producto;
+ count 
+-------
+  1454
+(1 row)
+\end{lstlisting}
+
+La carga de \textbf{clientes} es igual (\textbf{sql/clientes.sql}), teniendo en cuenta cargar clientes repetidos para después figuren en las \emph{tablas de equivalencia} del datawarehouse. 
+
+Varios \textbf{medios de pago} fueron registrados mediante el \emph{script} \textbf{sql/medio\_pago.sql}, al igual que \textbf{tipos de cliente} (\textbf{sql/tipo\_cliente.sql})   
+
+Las funciones para creaciones de \textbf{ventas} y \textbf{detalles de ventas} mantienen la misma firma que las implementadas en el sistema viejo (\textbf{sql/venta.sql} y \textbf{sql/detalle\_venta.sql}, respectivamente). 
+
+\vspace*{5mm}
+\begin{lstlisting}[title=Inserción de 15 ventas aleatorias en la BD]
+facturacion=# SELECT insertar_ventas(15);
+NOTICE:  [1/15] INSERTANDO VENTA (2015-07-25, 119357, 252269, Ifeoma G. Collins, Débito)
+NOTICE:  [2/15] INSERTANDO VENTA (2014-07-31, 585847, 967234, Keane K. Hodge, Bitcoin)
+NOTICE:  [3/15] INSERTANDO VENTA (2013-05-01, 501180, 639678, Edward T. Carey, Crédito)
+...
+\end{lstlisting}
+
+\vspace*{5mm}
+\begin{lstlisting}[title=Inserción de 100 detalles de ventas aleatorias en la BD]
+facturacion=# SELECT insertar_detalle_venta(100);
+NOTICE:  [1/100] INSERTANDO DETALLE (462363, 678175295, 10, 2249)
+NOTICE:  [2/100] INSERTANDO DETALLE (660157, 655324667, 77, 340)
+NOTICE:  [3/100] INSERTANDO DETALLE (164479, 612842726, 38, 8499)
+...
+\end{lstlisting}
 
 
+
+\section{Datawarehouse}
+
+\subsection{Marco teórico}
+
+Un Datawarehouse o almacén de datos es definido por \autocite{elmasri-dw} como \emph{una colección de datos orientada al sujeto, integrada, no volátil y de tiempo variable para el soporte de las decisiones de los directivos} 
+
+Existen dos esquemas posibles para la implementación de un datawarehouse. El primero, el \textbf{esquema estrella}, consiste en tener una única \emph{Tabla de Hechos} como objeto central del almacén, y distintas \emph{Tablas de Dimensión} circundantes. La Tabla de Hechos se relaciona con las dimensiones mediante una \emph{clave foránea}, pero las Tablas de Dimesión no se relacionan entre sí.
+
+En este esquema se \dq{desnormalizan} los datos de las bases de datos operacionales de las cuales se nutren el datawarehouse para tener mayor performance (pero con redundancia en los datos)
+
+El otro esquema posible es el \textbf{copo de nieve}. Esta alternativa propone que las Tablas de Dimensión tengan Tablas de Dimesión asociadas a ella. De esta forma, los datos se mantienen normalizados y las relaciones más pequeñas.
+
+Este último esquema es el adecuado para implementar el datawarhouse que requiere \dq{PatSur}.
+
+\subsection{Definición}
+
+Se utilizó la siguiente estructura de tablas.
+
+\begin{itemize}
+    \item Categoria(\textbf{id\_categoria}, \textbf{id\_subcategoria}, descripcion)
+    \item Producto(\textbf{id\_producto}, \underline{id\_categoria}, \underline{id\_subcategoria}, descripcion)
+    \item Medios(\textbf{id\_medio\_pago}, descripcion)
+    \item Region(\textbf{id\_region}, descripcion)
+    \item Provincia(\textbf{id\_provincia}, \underline{id\_region}, descripcion)
+    \item Ciudad(\textbf{id\_ciudad}, \underline{id\_provincia}, descripcion)
+    \item DistribucionGeografica(\textbf{id\_sucursal}, \underline{id\_ciudad}, descripcion)
+    \item TipoCliente(\textbf{id\_tipo}, descripcion)
+    \item Cliente(\textbf{id\_cliente}, \underline{id\_tipo}, nombre)
+    \item Tiempo(\textbf{id\_tiempo}, anio, mes)
+    \item Venta(fecha, \underline{\textbf{id\_tiempo}}, \underline{\textbf{id\_factura}}, \underline{\textbf{id\_cliente}}, \underline{\textbf{id\_producto}}, \underline{\textbf{id\_sucursal}}, 
+        
+        \underline{\textbf{id\_medio\_pago}}, monto\_vendido, cantidad\_vendida, descripcion)
+\end{itemize}
+
+\subsection{Carga de datos}
+
+\emph{Todos los \emph{scripts} mencionados a continuación se pueden encontrar en el subdirectorio \dq{scripts/cargas/datawarehouse}}
+
+~\\
+
+Para poder relizar la integración de los datos se decidió utilizar tablas de equivalencia para las tablas Producto y Cliente de ambos sistemas de facturación.
+
+Se utilizó la siguiente estructura:
+
+\begin{itemize}
+    \item TECliente(cliente\_s\_v, cliente\_s\_n, cliente\_d\_w)
+    \item TEProducto(producto\_s\_v, producto\_s\_n, producto\_d\_w)
+\end{itemize}
+
+Para las tablas de categoría, región, provincia, ciudad, sucursal, medio de pago y tipo de cliente se utilizaron los mismos datos en ambos sistemas o se generaron datos para ingresar en el datawarehouse.
+
+Luego se implementaron \emph{scripts} para que, desde el datawarehouse, se realicen consultas remotas a los sistemas actual y viejo; se realizará la equivalencia y se insertarán en las tablas de equivalencia, detallado a continuacion. 
+
+\pagebreak
+
+\begin{lstlisting}[title=Inserción a la tabla de equivalencia de cliente]
+
+-- Conexión con el sistema de facturación viejo
+SELECT DBLINK_CONNECT(
+	'sistema_viejo',
+	'host=172.40.0.10 port=5432 password=admin user=admin dbname=facturacion'
+);
+
+-- Conexión con el sistema actual
+SELECT DBLINK_CONNECT(
+	'sistema_actual',
+	'host=172.40.0.20 port=5432 password=admin user=admin dbname=facturacion'
+);
+
+-- Inserta en la tabla de equivalencia de clientes
+-- teniendo en cuenta que pueden haber clientes con el mismo nombre,
+-- en cuyo caso los inserta en la misma fila
+
+INSERT INTO te_cliente (cliente_s_n, cliente_s_v)
+SELECT
+    consulta_actual.cod_cliente,
+    consulta_viejo.nro_cliente
+FROM
+    DBLINK('sistema_actual', 'SELECT cod_cliente, nombre FROM cliente')
+    AS consulta_actual(cod_cliente integer, nombre varchar(50))
+    FULL OUTER JOIN
+        DBLINK('sistema_viejo', 'select nro_cliente, nombre from cliente')
+        AS consulta_viejo(nro_cliente integer, nombre varchar(50))
+    ON consulta_viejo.nombre = consulta_actual.nombre;
+    
+\end{lstlisting}
+
+Para la inserción en la tabla de equivalencia de \textbf{productos} el procedimiento es similar, considerando el nombre de los productos.
+
+Los scripts se pueden encontrar en \textbf{te\_cliente.sql} y \textbf{te\_producto.sql}
+
+Se corren ambos \emph{scripts} y ya se dispone de las tablas de equivalencia para relizar el \textbf{ETL}.
+
+Con respecto al resto de las tablas, se utilizan los scripts homónimos a las tablas a poblar. Por ejemplo: \textbf{categoria.sql}, \textbf{region.sql}
+
+
+\subsubsection{\emph{ETL}}
+
+Para el \emph{ETL} (\emph{Extraction, Transformation, Load}, \emph{Extracción, Transformación, Carga}) se crea una tabla temporal para albergar las ventas de un año y mes determinados. Acto seguido se realizan las inserciones a las tablas de Cliente, Producto, Venta, y Tiempo. Este procedimiento es realizado a través de una función a la cual se le pasa el mes y año a insertar en el datawarehouse.
+
+La creación de la tabla temporal, dentro de la función se realiza de la siguiente manera:
+
+\pagebreak
+
+\begin{lstlisting}[title=Creación de la Tabla Temporal]
+-- Conexión con el sitio del cual conseguir los datos
+PERFORM DBLINK_CONNECT(
+    'sistema_actual',
+    'host=172.40.0.20 port=5432 password=admin user=admin dbname=facturacion'
+);
+
+-- Creación tabla tempora
+CREATE TABLE tmp_ventas AS
+    SELECT
+    * 
+    FROM 
+    DBLINK(
+        'sistema_actual', 
+        'SELECT
+        fecha_venta,
+        v.id_factura,
+        v.cod_cliente,
+        dv.cod_producto,
+        cod_medio_pago,
+        unidad * precio AS monto_vendido,
+        unidad AS cantidad_vendida,
+        p.nombre AS nombre_producto,
+        p.cod_categoria,
+        p.cod_subcategoria,
+        precio,
+        c.nombre AS nombre_cliente,
+        c.cod_tipo
+        FROM venta v, cliente c, detalle_venta dv, producto p
+        WHERE 
+        v.id_factura = dv.id_factura
+        AND v.cod_cliente = c.cod_cliente
+        AND dv.cod_producto = p.cod_producto 
+        AND DATE_PART(''month'', fecha_venta) =  '|| $2 ||'
+                AND DATE_PART(''year'', fecha_venta) = '|| $1 ||'
+        ORDER BY 1'
+    ) AS st(
+        fecha_venta date,
+        id_factura integer,
+        cod_cliente integer,
+        cod_producto integer,
+        cod_medio_pago integer,
+        monto_vendido real,
+        cantidad_vendida integer,
+        nombre_producto varchar(100),
+        cod_categoria integer,
+        cod_subcategoria integer,
+        precio real,
+        nombre_cliente varchar(100),
+        cod_tipo integer
+    );
+\end{lstlisting}
+
+La selección de datos y el armado de la tabla temporal considera la estructura del sitio del cual se extraen los datos, lo cual hace que los campos que selecciona no sean los mismos cuando se extrae del sistema viejo que cuando se extrae del sistema actual. 
+
+Una vez cargada la tabla temporal, se realizan las inserciones a Producto, Cliente y Venta, para luego eliminarla (\emph{DROP TABLE}).
+
+\emph{Ambas funciones ETL están en los \emph{scripts} \textbf{poblar\_dw\_sistema\_viejo.sql} \newline y \textbf{poblar\_dw\_sistema\_nuevo.sql}.}
+
+Para facilitar la implementación de la herramienta de BI, se generaron vistas que reduzcan el esquema de Copo de Nieve planteado en el datawarehouse a uno de Estrella. Estas definciones se encuentran en el archivo \textbf{vistas\_datawarehouse.sql}
+
+\subsection{Explotación}
+
+Teniendo el datawarhouse creado y con datos cargados a partir de las bases de datos operacionales (luego de convertirlos con los procesos de ETL definidos), se pueden realizar distintas consultas que provean soporte para la toma de decisiones de \dq{PatSur}
+
+\subsection{Distintas perspectivas de las ventas}
+
+Una diferencia vital entre un datawarehouse y una base de datos operativa es la capacidad del primero de soportar operaciones \textbf{OLAP}. El \emph{área de procesamiento analítico en línea} (\emph{Online Analytical Processing}, \emph{OLAP}) trata de las herramientas y de las técnicas para el análisis de los datos que pueden dar respuestas casi instantáneas a las consultas que soliciten datos resumidos, aunque la base de datos (datawarehouse) sea extremedamente grande \autocite{silberschatz-olap}
+
+Para mostrar distintas perspectivas y agrupaciones posibles con respecto a las ventas de la empresa, se puede utilizar una de las extensiones de SQL-1999: la claúsula \textbf{CUBE} 
+
+Debido a la extensión de la consulta, se la puede encontrar en el archivo \textbf{consultas/olap.sql} 
+
+Los siguientes criterios por los cuales se agrupa la cantidad de unidades vendidas y el monto total vendido son:
+
+\begin{itemize}
+    \item Fecha
+    \item Cliente
+    \item Producto
+    \item Medio de pago
+    \item Sucursal
+    \item Ciudad
+    \item Provincia
+\end{itemize}
+
+Se toma un criterio por vez, y también se agrupa por las distintas combinaciones posibles
+
+
+
+\subsection{Clientes que generan mayores ingresos}
+
+La consulta del archivo \textbf{consultas/clientes\_mas\_compradores.sql} utiliza otra extensión de SQL-1999, \textbf{RANK()} para indicar numéricamente un orden de los registros según un criterio indicado  
+
+\vspace*{5mm}
+\begin{lstlisting}[title=Clientes que generan mayores ingresos para la empresa]
+SELECT 
+    cli.id_cliente AS "ID Cliente", 
+    cli.nombre AS "Nombre", 
+    CAST(SUM(ven.monto_vendido) AS bigint) AS "Total vendido", 
+    RANK() OVER (ORDER BY SUM(ven.monto_vendido) DESC) AS "Mayores compradores" 
+FROM venta AS ven 
+    JOIN cliente AS cli ON ven.id_cliente=cli.id_cliente 
+GROUP BY cli.id_cliente;
+\end{lstlisting}
+
+
+
+
+\section{Herramienta de \emph{BI}: \emph{Pentaho}}
+
+\emph{Pentaho BI Suite} es un conjunto de programas para el soporte de la toma de decisiones y \emph{Business Intelligence} \autocite{wikipedia-pentaho} de la empresa Hitachi. Todas las herramientas de la suite corren sobre la \emph{JVM} (por lo tanto es necesario contar con Java instalado).
+
+Para este trabajo de laboratorio se utilizaron las herramientas \underline{\href{https://mondrian.pentaho.com/documentation/workbench.php}{\emph{Schema Workbench}}} y \underline{\href{https://help.pentaho.com/Documentation/7.1/Installation}{\emph{BI Server}}} (este último se implementó mediante contenedores de \docker{}, con las configuraciones descriptas en la sección 1)
+
+La herramienta \emph{Schema Worbench} se utilizó para definir el esquema que contiene el cubo OLAP, cuyas medidas y dimensiones son las requeridas por \dq{PatSur}. Estas son:
+
+\begin{itemize}
+    \item Medidas:
+        \begin{enumerate}
+            \item Unidades vendidas
+            \item Monto recaudado
+        \end{enumerate}
+    \item Dimensiones:
+        \begin{enumerate}
+            \item Fecha
+            \item Sucursales
+            \item Clientes
+            \item Productos
+            \item Medios de pago
+        \end{enumerate}
+\end{itemize}
+
+
+\subsection*{Integración de \emph{Schema Workbench} con \emph{PostgreSQL}}
+
+Cabe aclarar que para conectarse a una base de datos \emph{PostgreSQL} desde el \emph{Schema Workbench} hace falta descargar los \underline{\href{https://jdbc.postgresql.org/}{drivers JDBC para el motor}} y ubicarlos en el directorio \dq{drivers} dentro del directorio de instalación de \emph{Schema Workbench} 
+
+\subsection{Definición del esquema y del cubo OLAP}
+
+Una vez instalado el driver correspondiente para el motor y con el datawarehouse corriendo, seguir la siguiente secuencia de pasos para poder conectarse a la base de datos y crear el cubo OLAP:
+
+\begin{enumerate}
+    \item Crear la conexión con el datawarehouse
+    \begin{enumerate}
+        \item Hacer click en \texttt{Options}
+        \item Seleccionar \texttt{Connection...}
+        \item Los datos para la conexión con el datawarehouse son los siguientes:
+        \begin{itemize}
+            \item Connection Type: PostgreSQL
+            \item \textbf{Connection Name}: conn\_datawarehouse 
+            \item Host Name: 172.40.0.30
+            \item Database Name: datawarehouse
+            \item Port Number: 5432
+            \item User Name: admin
+            \item Password: admin
+        \end{itemize}
+        \item Hacer click en \texttt{OK}
+    \end{enumerate}
+     \item Crear un nuevo esquema
+    \begin{enumerate}
+        \item Hacer click en \texttt{File}
+        \item Seleccionar \texttt{New}
+        \item Seleccionar \texttt{Schema}
+    \end{enumerate}
+    \item Crear un nuevo cubo
+    \begin{enumerate}
+        \item Click derecho sobre el esquema recién creado
+        \item Seleccionar \texttt{Add cube}
+    \end{enumerate}
+    \item Definir la Tabla de Hechos para el cubo
+    \begin{enumerate}
+        \item Click derecho sobre el cubo
+        \item Seleccionar \texttt{Add Table}
+    \end{enumerate}
+    \item Definir las medidas del cubo
+    \begin{enumerate}
+        \item Click derecho sobre el cubo
+        \item Seleccionar \texttt{Add Measure}
+        \item Definir qué columna de la Tabla de Hechos será utilizada como medida y con qué operación (cantidad de valores distintos, suma, cuenta, etc.)
+    \end{enumerate}
+    \item Definir las dimensiones del cubo
+    \begin{enumerate}
+        \item Click derecho sobre el cubo
+        \item Seleccionar \texttt{Add Dimension}
+        \item Cada dimensión tiene una \emph{jerarquía}, la cual debe estar relacionada con una tabla del datawarehouse 
+        \item Cada jerarquía también debe tener por lo menos un nivel definido; cada nivel debe estar relacionado con una columna de la tabla de la jerarquía
+    \end{enumerate}
+    \item Publicar el esquema en el servidor
+    \begin{enumerate}
+        \item Hacer click en \texttt{File}
+        \item Seleccionar \texttt{Publish...}
+        \item Los datos que se deben ingresar para publicar el esquema son los siguientes:
+        \begin{itemize}
+            \item URL: localhost:7070
+            \item Credentials:
+                \begin{itemize}
+                    \item User: admin
+                    \item Password: password
+                \end{itemize}
+        \end{itemize}
+        \item Hacer click en \texttt{OK}
+    \end{enumerate}
+\end{enumerate}
+
+Una vez publicado el esquema en el servidor, navegar a la dirección \emph{localhost:7070} e ingresar las credenciales previamente descriptas (\emph{Username}: admin, \emph{Password}: password). 
+
+Antes de visualizar el cubo, se debe crear la conexión con el datawarehouse. Para ello, seguir los siguientes pasos:
+
+\begin{enumerate}
+    \item Hacer click en \texttt{Manage Data Sources}
+    \item Hacer click en el engranaje
+    \item Seleccionar \texttt{New Connection...}
+    \item Ingresar \textbf{los mismos datos} con los cuales se definió la conexión al datawarehouse en el \emph{Schema Workbench}   
+    \item Volver a la pantalla de inicio
+    \item Hacer click en \texttt{Create New}
+    \item Seleccionar \texttt{JPivot View} 
+    \item Seleccionar el esquema y el cubo adecuado, y hacer click en \texttt{OK} 
+\end{enumerate}
 
 
 
@@ -268,10 +542,3 @@ Para recorrer la tabla de inscripciones y verificar si cada curso registrado exi
 
 \end{document}
 
-\todo[inline, color=green!40]{This is an inline comment.}
-
-\vspace*{5mm}
-\lstset{style=sql}
-\begin{lstlisting}
-CREATE TABLE aeropuerto OF t_aeropuerto;
-\end{lstlisting}
