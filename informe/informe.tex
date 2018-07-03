@@ -514,6 +514,19 @@ Una vez instalado el driver correspondiente para el motor y con el datawarehouse
     \end{enumerate}
 \end{enumerate}
 
+\begin{displayquote}
+    \textbf{ACLARACIÓN}: cada vez que se publique una nueva versión del cubo al servidor, se debe refrescar la \emph{caché Mondrian} del servidor, para ello, desde la pantalla de inicio del \emph{BI Server}, hacer click en \texttt{Tools}, luego en \texttt{Refresh}, y seleccionar \texttt{Mondrian Schema Cache}     
+\end{displayquote}
+
+\subsubsection{Exportando el cubo de \dq{PatSur}}
+
+En el directorio \dq{scripts/pentaho} se encuentra un archivo llamado 
+
+\textbf{patsur\_olap.mondrian.xml} que corresponde al esquema que contiene el cubo confeccionado para \dq{PatSur}.
+
+Para poder publicarlo en el servidor, abrir el archivo desde \emph{Schema Workbench} y realizar los pasos para publicarlo en el servidor. 
+
+
 \subsection{Visualización del cubo}
 
 Una vez publicado el esquema en el servidor, navegar a la dirección \emph{localhost:7070} e ingresar las credenciales previamente descriptas (\emph{Username}: admin, \emph{Password}: password). 
@@ -530,6 +543,10 @@ Antes de visualizar el cubo, se debe crear la conexión con el datawarehouse. Pa
     \item Seleccionar \texttt{JPivot View} 
     \item Seleccionar el esquema y el cubo adecuado, y hacer click en \texttt{OK} 
 \end{enumerate}
+
+En la pestaña de \texttt{JPivot View} se puede modificar la visualización del cubo para agregar o eliminar medidas o dimensiones, filtrar, ordenar, y luego guardar esas vistas creadas 
+
+Con esta herramienta es posible generar vistas que provean la misma información que las consultas de la sección anterior.
 
 
 
